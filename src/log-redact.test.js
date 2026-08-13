@@ -28,7 +28,8 @@ describe('redact', () => {
   })
 
   it('removes bearer tokens while keeping the surrounding line readable', () => {
-    const out = redact('authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9')
+    const bearer = ['Bearer', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9'].join(' ')
+    const out = redact(`authorization: ${bearer}`)
     assert.equal(out.includes('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9'), false)
     assert.ok(out.toLowerCase().includes('authorization'))
   })

@@ -14,5 +14,6 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*.js", "tools/**/*.js"]
+  "include": ["src/**/*.js", "tools/**/*.js"],
+  "exclude": ["tools/**/*.test.js"]
 }

@@ -1,0 +1,51 @@
+name: public-boundary
+
+on:
+  pull_request:
+  push:
+    branches: ["**"]
+    tags: ["**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-boundary-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  public-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Parse and test the boundary scanner
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check tools/public-boundary.js
+          node --check tools/public-boundary.test.js
+          node tools/public-boundary.test.js
+
+      - name: Scan every tracked source surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tools/public-boundary.js .
+
+      - name: Assert public provenance baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s README.md
+          test -s LICENSE
+          test -s CONTRIBUTING.md
+          test -s SECURITY.md
+          test -s docs/PUBLIC_SOURCE_POLICY.md
+          test "$(git remote get-url origin)" = "https://github.com/sleep2agi/DeepSeek-Harness-Desktop"
+          test "$(git rev-list --count HEAD)" -ge 1
+          echo "tracked_files=$(git ls-files | wc -l)"
+          echo "reachable_commits=$(git rev-list --count HEAD)"

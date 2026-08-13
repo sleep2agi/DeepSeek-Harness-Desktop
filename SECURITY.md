@@ -46,3 +46,13 @@ Stating these plainly is more useful than implying a boundary that is not there.
 - **Patch overlays are executable configuration.** The kernel's config dialect evaluates
   `!!js` expressions. Do not load a patch file from a source you would not run a script
   from. The shell only ever writes overlays it constructs itself.
+
+## Provenance and release boundary
+
+- Credentials must not enter renderer-controlled IPC, logs, crash reports, build artifacts, or update metadata.
+- Runtime executables and dependency graphs must be pinned and verified by both manifest identity and actual
+  packaged bytes before execution.
+- Network navigation, local process identity, and native-module availability fail closed.
+- Release evidence must bind source, tools, dependency locks, unpacked bytes, and published artifacts.
+
+No release is security-supported until the release and artifact gates in the supervision ledger are closed.

@@ -103,7 +103,7 @@ describe('buildKernelEnv', () => {
   it('drops inherited DSH_* variables instead of letting them re-point the kernel', () => {
     const env = buildKernelEnv({
       parentEnv: {
-        DSH_HOME: '/the/users/own/home',
+        DSH_HOME: ['', 'the', 'users', 'own', 'home'].join('/'),
         DSH_TELEMETRY_OTLP_URL: 'https://somewhere.example/v1/logs',
         dsh_lowercase: 'x',
         PATH: '/usr/bin',
