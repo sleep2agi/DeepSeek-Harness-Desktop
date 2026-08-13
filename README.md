@@ -12,6 +12,17 @@ runtime can be launched by double-clicking rather than from a terminal.
 > (`0.1.0-rc.x`) whose configuration surface is still changing. Windows is the platform
 > that has been built and run end to end; see [Roadmap](#roadmap) for the rest.
 
+| | |
+|:---:|:---:|
+| ![Starting a session](docs/images/01-home.png) | ![Choosing an agent preset](docs/images/02-agent-modes.png) |
+| Starting a session in a workspace | Choosing an agent preset |
+| ![Plugin settings](docs/images/03-settings-plugins.png) | ![General settings](docs/images/04-settings-general.png) |
+| Configuring the kernel's plugins | Presets, permissions, and appearance |
+
+Everything above is the upstream web UI, served by the kernel and rendered in the shell's
+window. The shell contributes the window, the process, and the security policy around
+them — not the interface.
+
 ## What this is, and what it is not
 
 This repository contains **only the desktop shell**. All agent behaviour — models, tools,
