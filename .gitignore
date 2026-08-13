@@ -1,11 +1,43 @@
+# --- Local agent-network scaffolding (never publish) ---
+.anet/
+.mcp.json
+
+# --- Dependencies ---
 node_modules/
-dist/
+.pnpm-store/
+
+# --- Kernel payload ---
+# Installed by `npm run kernel:install` from the version pinned in upstream.lock.json,
+# which is the thing under version control. The tree itself is a build artefact.
+resources/kernel/
+
+# --- Build output ---
 out/
+dist/
 build/
-coverage/
-*.log
-.DS_Store
-Thumbs.db
+release/
+*.tsbuildinfo
+
+# --- Environment & secrets ---
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+
+# --- Test & coverage ---
+coverage/
+.vitest/
+
+# --- Editor / OS ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# --- Logs ---
+logs/
+*.log
+npm-debug.log*

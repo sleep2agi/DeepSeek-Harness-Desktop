@@ -1,0 +1,17 @@
+{
+  "$comment": "The single source of truth for which kernel this shell bundles. Upstream is a developer preview that documents breaking changes between releases, so upgrading is an explicit commit — never something a rebuild does on its own. Do not repeat these values anywhere else; a second copy stays self-consistent right up until someone changes only one of them.",
+  "kernel": {
+    "name": "@deepseek-ai/dsh",
+    "version": "0.1.0-rc.6",
+    "integrity": "sha512-brpZfED7ieRa2PQ5tUxMhHrM1pb2CmKFVM/f6yMULBDMicahk+Z2OsHgTwTDnoiZm23Ftu9rQz0NN4pflaoJcg==",
+    "bin": "node_modules/@deepseek-ai/dsh/lib/bin.js"
+  },
+  "nodeRuntime": {
+    "$comment": "The kernel is bundled with the Node build it is published against, rather than being run on Electron's built-in Node. Those are different runtimes: the kernel's HMR plugin aborts startup under Electron-as-Node with '--expose-internals is required', and starts cleanly on this build with the same configuration. sha256 is the value published in https://nodejs.org/dist/<version>/SHASUMS256.txt.",
+    "version": "v22.22.0",
+    "win-x64": {
+      "archive": "node-v22.22.0-win-x64.zip",
+      "sha256": "c97fa376d2becdc8863fcd3ca2dd9a83a9f3468ee7ccf7a6d076ec66a645c77a"
+    }
+  }
+}

@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Test and scan
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # scan-leaks inspects the committed history, not just the working tree.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.15'
+
+      - name: Install shell dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Scan for content that must not be published
+        run: npm run scan:leaks
+
+  e2e:
+    name: End-to-end
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.15'
+
+      - name: Install shell dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      # Verifies the pinned version and integrity as part of installing, so a registry
+      # serving something other than what upstream.lock.json names fails here.
+      - name: Install the pinned kernel
+        run: npm run kernel:install
+
+      - name: Start the kernel for real and assert it serves
+        run: npm run test:e2e
