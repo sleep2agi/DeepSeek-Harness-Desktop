@@ -17,6 +17,32 @@ check("synthetic private-product marker is rejected", () => {
   assert.equal(scanEntries([{ name: "app.js", text: marker }])[0].rule, "synthetic-private-product-marker")
 })
 
+check("private organization and product identities are rejected", () => {
+  const findings = scanEntries([
+    { name: "a.txt", text: ["tian", "ma"].join("") },
+    { name: "b.txt", text: ["tm", "work"].join("") },
+    { name: "c.txt", text: String.fromCodePoint(0x5929, 0x9a6c) },
+  ])
+  assert.deepEqual(findings.map((value) => value.rule), [
+    "private-product-identity",
+    "private-product-identity",
+    "private-product-identity",
+  ])
+})
+
+check("private application and component identities are rejected", () => {
+  const findings = scanEntries([
+    { name: "a.txt", text: ["cli", "aab9eabbceba9cca"].join("_") },
+    { name: "b.txt", text: ["tm", "code"].join("") },
+    { name: "c.txt", text: ["agent", "portal"].join("-") },
+  ])
+  assert.deepEqual(findings.map((value) => value.rule), [
+    "private-product-identity",
+    "private-product-identity",
+    "private-product-identity",
+  ])
+})
+
 check("credential-shaped assignment is rejected", () => {
   const secret = ["app", "secret"].join("_") + ": " + "abcdefghijklmnop"
   assert.equal(scanEntries([{ name: "config.yml", text: secret }])[0].rule, "credential-assignment")
@@ -39,5 +65,5 @@ check("unknown tracked binary surface fails closed", () => {
   assert.equal(scanEntries([{ name: "asset.exe", text: "" }])[0].rule, "unknown-tracked-binary-surface")
 })
 
-assert.equal(cases, 6)
+assert.equal(cases, 8)
 console.log(`RESULT cases=${cases} failures=0 skipped=0`)

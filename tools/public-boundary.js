@@ -5,8 +5,17 @@ const path = require("node:path")
 const { execFileSync } = require("node:child_process")
 
 const TEXT_EXTENSIONS = new Set(["", ".cjs", ".css", ".html", ".js", ".json", ".md", ".mjs", ".toml", ".ts", ".tsx", ".txt", ".yaml", ".yml"])
+const PRIVATE_IDENTITY_PATTERN = new RegExp([
+  ["tian", "ma"].join(""),
+  ["tm", "work"].join(""),
+  ["tm", "code"].join(""),
+  ["agent", "portal"].join("[-_]?"),
+  ["cli", "aab9eabbceba9cca"].join("_"),
+  "\\u5929\\u9a6c",
+].join("|"), "iu")
 const RULES = Object.freeze([
   ["synthetic-private-product-marker", new RegExp(["PRIVATE", "PRODUCT", "MARKER", "DO", "NOT", "SHIP"].join("_"), "i")],
+  ["private-product-identity", PRIVATE_IDENTITY_PATTERN],
   ["credential-assignment", /\b(?:api[_-]?key|app[_-]?secret|access[_-]?token|refresh[_-]?token|password)\s*[:=]\s*["']?[^\s"'${}]{8,}/i],
   ["bearer-token", /\bBearer\s+[A-Za-z0-9._~+/=-]{12,}/i],
   ["private-network-url", /https?:\/\/(?:[^/]*\.)?(?:internal|corp|lan)(?::\d+)?(?:\/|\b)/i],

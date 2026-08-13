@@ -22,3 +22,8 @@ This repository is an independent, unofficial community project.
 Each build and release must record the exact source SHA, public upstream identities, dependency-lock hashes,
 tool versions, artifact hashes and sizes, license/SBOM outputs, and the identity of the verifier. A source-tree
 scan cannot substitute for scanning unpacked and published artifacts.
+
+The automated source gate contains explicit deny rules for known private organization, product, component,
+portal, and application identities. Generic heuristics alone are not evidence that this identity boundary is
+enforced. Binary assets and historical blob contents require separate provenance and artifact controls; the
+current source gate must not be represented as covering those surfaces.
