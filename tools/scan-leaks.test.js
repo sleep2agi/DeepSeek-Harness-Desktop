@@ -48,6 +48,19 @@ describe('scanRepository public history', () => {
     assert.ok(scanRepository(root).includes('pull-request history: private organization or product identity'))
   })
 
+  it('finds a leak reachable only from a public tag', () => {
+    const { root, git } = fixture()
+    git('switch', '-c', 'tagged-then-deleted')
+    writeFileSync(join(root, 'tag-secret.txt'), `${['tm', 'code'].join('')}\n`)
+    git('add', 'tag-secret.txt')
+    git('commit', '-m', 'tag-only bytes')
+    const leaked = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim()
+    git('switch', 'main')
+    git('branch', '-D', 'tagged-then-deleted')
+    git('update-ref', 'refs/remotes/tag-audit/v-test', leaked)
+    assert.ok(scanRepository(root).includes('git history: private organization or product identity'))
+  })
+
   it('fails closed when history cannot be enumerated', () => {
     const root = mkdtempSync(join(tmpdir(), 'dsh-not-a-repo-'))
     roots.push(root)

@@ -49,13 +49,19 @@ const PRIVATE_IDENTITY = new RegExp([
   '\\u5929\\u9a6c',
 ].join('|'), 'iu')
 
+// Public product identity is non-negotiable on every ref type. PR history only relaxes
+// synthetic RFC1918 fixture addresses.
+const HISTORY_FORBIDDEN = Object.freeze([
+  ...FORBIDDEN,
+  { name: 'private organization or product identity', pattern: PRIVATE_IDENTITY },
+])
+
 // Pull-request refs remain publicly fetchable after their source branches are deleted.
 // Historical test fixtures legitimately contain synthetic private IPs and fake user
 // paths, so PR history uses the non-negotiable disclosure rules rather than pretending
 // those fixtures are real infrastructure. Branch history still uses every rule above.
 const PR_HISTORY_FORBIDDEN = Object.freeze([
-  ...FORBIDDEN.filter(({ name }) => name !== 'RFC1918 address'),
-  { name: 'private organization or product identity', pattern: PRIVATE_IDENTITY },
+  ...HISTORY_FORBIDDEN.filter(({ name }) => name !== 'RFC1918 address'),
 ])
 
 /** Paths whose contents are not ours to police. */
@@ -102,11 +108,12 @@ function scanRepository(root) {
 
   // History matters as much as the current tree: a secret removed in a later commit is
   // still served by every clone of the repository.
-  // Every public branch is fetchable whether or not it is merged. CI first fetches and
-  // proves the complete remote-head set, then this scan covers HEAD plus every origin ref.
-  // A secret on an unmerged branch is already disclosed; waiting until merge is too late.
-  const history = git(['log', 'HEAD', '--remotes=origin', '-p', '--no-color', '--diff-filter=AM'], root)
-  for (const { name, pattern } of FORBIDDEN) {
+  // Every public branch and tag is fetchable whether or not it is merged. CI first fetches
+  // and proves the complete remote-head and tag sets, then this scan covers HEAD plus both
+  // audit namespaces. A secret on an unmerged branch or tag-only commit is already
+  // disclosed; waiting until merge is too late.
+  const history = git(['log', 'HEAD', '--remotes=origin', '--remotes=tag-audit', '-p', '--no-color', '--diff-filter=AM'], root)
+  for (const { name, pattern } of HISTORY_FORBIDDEN) {
     if (pattern.test(history)) findings.push(`git history: ${name}`)
   }
   const pullHistory = git(['log', '--remotes=pull-audit', '-p', '--no-color', '--diff-filter=AM'], root)
