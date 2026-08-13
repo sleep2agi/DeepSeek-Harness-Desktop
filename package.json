@@ -19,8 +19,8 @@
   },
   "scripts": {
     "start": "electron .",
-    "test": "node --test \"src/**/*.test.js\"",
-    "test:e2e": "node --test \"tests/**/*.test.js\"",
+    "test": "node tools/run-tests.js src",
+    "test:e2e": "node tools/run-tests.js tests",
     "test:all": "npm run test && npm run test:e2e",
     "typecheck": "tsc --noEmit",
     "kernel:install": "node tools/install-kernel.js && node tools/install-node.js && node tools/prune-kernel.js",
