@@ -17,6 +17,10 @@ import { KernelProcess, findFreePort } from './kernel-process.js'
 import { buildKernelArgs, buildKernelEnv, isSupportedNodeVersion } from './kernel-runtime.js'
 import { httpProbe, waitForReady } from './readiness.js'
 import { buildShellPatch, serialisePatch } from './shell-patch.js'
+import { installDefaultDenyPermissions } from './permission-policy.js'
+import { createBeforeQuitHandler } from './quit-coordinator.js'
+import { assertStartupRuntimeCurrent } from './startup-current.js'
+import { createRuntimeShutdown } from './runtime-shutdown.js'
 import { writeFile } from 'node:fs/promises'
 import {
   SECURE_WEB_PREFERENCES,
@@ -159,6 +163,15 @@ function createWindow(origin) {
   // into it there is no shell-provided surface for it to reach through.
 
   const { webContents } = window
+  mainWindow = window
+  try {
+    assertStartupRuntimeCurrent(kernel)
+  } catch (error) {
+    mainWindow = null
+    window.destroy()
+    throw error
+  }
+  installDefaultDenyPermissions(webContents.session)
 
   webContents.on('will-navigate', (event, url) => {
     if (!isAllowedNavigation(url, origin)) {
@@ -201,12 +214,10 @@ function tail(text, lines) {
   return text.split('\n').slice(-lines).join('\n')
 }
 
-/** @returns {Promise<void>} */
-async function shutdown() {
-  const running = kernel
-  kernel = null
-  if (running !== null) await running.stop()
-}
+const shutdown = createRuntimeShutdown({
+  getCurrent: () => kernel,
+  clearIfCurrent: (expected) => { if (kernel === expected) kernel = null },
+})
 
 // A second instance would start a second kernel against the same home directory, and the
 // two would overwrite each other's state.
@@ -222,7 +233,7 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(async () => {
     try {
       const { origin } = await startKernel()
-      mainWindow = createWindow(origin)
+      createWindow(origin)
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
 
@@ -244,14 +255,13 @@ if (!app.requestSingleInstanceLock()) {
     }
   })
 
-  app.on('window-all-closed', async () => {
-    await shutdown()
-    app.quit()
-  })
+  app.on('window-all-closed', () => app.quit())
 
   // `before-quit` is the last point at which the kernel can still be stopped; without it a
   // quit triggered from the menu or the OS would leave the process tree running.
-  app.on('before-quit', () => {
-    void shutdown()
-  })
+  app.on('before-quit', createBeforeQuitHandler({
+    shutdown,
+    resumeQuit: () => app.quit(),
+    onFailure: (error) => console.error('kernel shutdown failed', error),
+  }))
 }
