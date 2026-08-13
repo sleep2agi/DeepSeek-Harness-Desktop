@@ -20,20 +20,20 @@ function findTests(root) {
   return found.sort((left, right) => left.localeCompare(right, "en"))
 }
 
-const requestedRoot = process.argv[2]
-if (!requestedRoot) {
-  console.error("run-tests: expected a test root")
+const requestedRoots = process.argv.slice(2)
+if (requestedRoots.length === 0) {
+  console.error("run-tests: expected at least one test root")
   process.exit(2)
 }
 
-const root = path.resolve(requestedRoot)
-const tests = findTests(root)
+const roots = requestedRoots.map((root) => path.resolve(root))
+const tests = [...new Set(roots.flatMap(findTests))].sort((left, right) => left.localeCompare(right, "en"))
 if (tests.length === 0) {
-  console.error(`run-tests: discovered zero tests under ${root}`)
+  console.error(`run-tests: discovered zero tests under ${roots.join(", ")}`)
   process.exit(3)
 }
 
-console.log(`run-tests: discovered ${tests.length} files under ${root}`)
+console.log(`run-tests: discovered ${tests.length} files under ${roots.join(", ")}`)
 const result = spawnSync(process.execPath, ["--test", ...tests], { stdio: "inherit" })
 if (result.error) {
   console.error(`run-tests: failed to start Node: ${result.error.message}`)

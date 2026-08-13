@@ -16,7 +16,7 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -40,6 +40,30 @@ const FORBIDDEN = Object.freeze([
   { name: 'RFC1918 address', pattern: /\b(?:10\.\d{1,3}|192\.168|172\.(?:1[6-9]|2\d|3[01]))\.\d{1,3}\.\d{1,3}\b/ },
 ])
 
+const PRIVATE_IDENTITY = new RegExp([
+  ['tian', 'ma'].join(''),
+  ['tm', 'work'].join(''),
+  ['tm', 'code'].join(''),
+  ['agent', 'portal'].join('[-_]?'),
+  ['cli', 'aab9eabbceba9cca'].join('_'),
+  '\\u5929\\u9a6c',
+].join('|'), 'iu')
+
+// Public product identity is non-negotiable on every ref type. PR history only relaxes
+// synthetic RFC1918 fixture addresses.
+const HISTORY_FORBIDDEN = Object.freeze([
+  ...FORBIDDEN,
+  { name: 'private organization or product identity', pattern: PRIVATE_IDENTITY },
+])
+
+// Pull-request refs remain publicly fetchable after their source branches are deleted.
+// Historical test fixtures legitimately contain synthetic private IPs and fake user
+// paths, so PR history uses the non-negotiable disclosure rules rather than pretending
+// those fixtures are real infrastructure. Branch history still uses every rule above.
+const PR_HISTORY_FORBIDDEN = Object.freeze([
+  ...HISTORY_FORBIDDEN.filter(({ name }) => name !== 'RFC1918 address'),
+])
+
 /** Paths whose contents are not ours to police. */
 const SKIP = [/^resources\/kernel\//, /^node_modules\//, /^release\//, /^assets\/.*\.(png|ico|icns)$/]
 
@@ -47,57 +71,70 @@ const SKIP = [/^resources\/kernel\//, /^node_modules\//, /^release\//, /^assets\
  * @param {string[]} args
  * @returns {string}
  */
-function git(args) {
-  return execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+function git(args, root = repoRoot) {
+  return execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
 }
 
-/** @returns {string[]} */
-function trackedFiles() {
-  return git(['ls-files'])
+/** @param {string} root @returns {string[]} */
+function trackedFiles(root) {
+  return git(['ls-files'], root)
     .split('\n')
     .filter((path) => path !== '')
     .filter((path) => !SKIP.some((skip) => skip.test(path)))
 }
 
-/** @type {string[]} */
-const findings = []
+/** @param {string} root @returns {string[]} */
+function scanRepository(root) {
+  /** @type {string[]} */
+  const findings = []
 
-for (const path of trackedFiles()) {
-  /** @type {string} */
-  let content
-  try {
-    content = readFileSync(resolve(repoRoot, path), 'utf8')
-  } catch {
-    continue // Binary or unreadable; nothing to match against.
-  }
+  for (const path of trackedFiles(root)) {
+    /** @type {string} */
+    let content
+    try {
+      content = readFileSync(resolve(root, path), 'utf8')
+    } catch {
+      continue // Binary or unreadable; nothing to match against.
+    }
 
-  for (const { name, pattern } of FORBIDDEN) {
-    const match = pattern.exec(content)
-    if (match !== null) {
-      const line = content.slice(0, match.index).split('\n').length
-      findings.push(`${path}:${line}: ${name}`)
+    for (const { name, pattern } of FORBIDDEN) {
+      const match = pattern.exec(content)
+      if (match !== null) {
+        const line = content.slice(0, match.index).split('\n').length
+        findings.push(`${path}:${line}: ${name}`)
+      }
     }
   }
-}
 
-// History matters as much as the current tree: a secret removed in a later commit is
-// still served by every clone of the repository.
-try {
-  // Validate the candidate's reachable history. Unrelated local/remote refs are not part
-  // of the commit being proposed and would make results depend on checkout state.
-  const history = git(['log', 'HEAD', '-p', '--no-color', '--diff-filter=AM'])
-  for (const { name, pattern } of FORBIDDEN) {
+  // History matters as much as the current tree: a secret removed in a later commit is
+  // still served by every clone of the repository.
+  // Every public branch and tag is fetchable whether or not it is merged. CI first fetches
+  // and proves the complete remote-head and tag sets, then this scan covers HEAD plus both
+  // audit namespaces. A secret on an unmerged branch or tag-only commit is already
+  // disclosed; waiting until merge is too late.
+  const history = git(['log', 'HEAD', '--remotes=origin', '--remotes=tag-audit', '-p', '--no-color', '--diff-filter=AM'], root)
+  for (const { name, pattern } of HISTORY_FORBIDDEN) {
     if (pattern.test(history)) findings.push(`git history: ${name}`)
   }
-} catch {
-  console.warn('scan-leaks: history scan skipped (no commits yet)')
+  const pullHistory = git(['log', '--remotes=pull-audit', '-p', '--no-color', '--diff-filter=AM'], root)
+  for (const { name, pattern } of PR_HISTORY_FORBIDDEN) {
+    if (pattern.test(pullHistory)) findings.push(`pull-request history: ${name}`)
+  }
+  return findings
 }
 
-if (findings.length > 0) {
-  console.error('scan-leaks found content that must not be published:\n')
-  for (const finding of findings) console.error(`  ${finding}`)
-  console.error('\nRemove it from the working tree, and rewrite history if it was ever committed.')
-  process.exit(1)
+function main() {
+  const findings = scanRepository(repoRoot)
+  if (findings.length > 0) {
+    console.error('scan-leaks found content that must not be published:\n')
+    for (const finding of findings) console.error(`  ${finding}`)
+    console.error('\nRemove it from the working tree, and rewrite history if it was ever committed.')
+    process.exitCode = 1
+    return
+  }
+  console.log('scan-leaks: clean')
 }
 
-console.log('scan-leaks: clean')
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) main()
+
+export { scanRepository }

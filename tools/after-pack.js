@@ -61,17 +61,18 @@ export default async function afterPack(context) {
  * Removes Chromium locale files the application will not use.
  *
  * @param {string} appDir
- * @returns {Promise<void>}
+ * @param {{readdir: (path: string) => Promise<string[]>, rm: (path: string, options: {force: boolean}) => Promise<void>, stat: (path: string) => Promise<{size: number}>}} [dependencies]
+ * @returns {Promise<{removed: number, bytes: number}>}
  */
-async function pruneLocales(appDir) {
+async function pruneLocales(appDir, dependencies = { readdir, rm, stat }) {
   const localesDir = join(appDir, 'locales')
 
   /** @type {string[]} */
   let entries
   try {
-    entries = await readdir(localesDir)
+    entries = await dependencies.readdir(localesDir)
   } catch {
-    return // No locales directory on this platform layout.
+    return { removed: 0, bytes: 0 } // No locales directory on this platform layout.
   }
 
   let removed = 0
@@ -83,9 +84,10 @@ async function pruneLocales(appDir) {
 
     const path = join(localesDir, entry)
     try {
-      bytes += (await stat(path)).size
-      await rm(path, { force: true })
+      const size = (await dependencies.stat(path)).size
+      await dependencies.rm(path, { force: true })
       removed += 1
+      bytes += size
     } catch {
       // Leaving one behind costs space, not correctness.
     }
@@ -95,6 +97,7 @@ async function pruneLocales(appDir) {
     `  • pruned ${removed} locale files, ${(bytes / 1024 / 1024).toFixed(1)} MB` +
       ` (kept ${[...KEEP_LOCALES].join(', ')})`,
   )
+  return { removed, bytes }
 }
 
 /**
@@ -109,3 +112,5 @@ async function assertPresent(path, message) {
     throw new Error(message)
   }
 }
+
+export { pruneLocales }
