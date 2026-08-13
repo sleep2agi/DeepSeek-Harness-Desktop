@@ -6,6 +6,11 @@
 node_modules/
 .pnpm-store/
 
+# --- Kernel payload ---
+# Installed by `npm run kernel:install` from the version pinned in upstream.lock.json,
+# which is the thing under version control. The tree itself is a build artefact.
+resources/kernel/
+
 # --- Build output ---
 out/
 dist/

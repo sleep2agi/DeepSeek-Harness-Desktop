@@ -1,0 +1,26 @@
+DeepSeek Harness Desktop
+Copyright (c) 2026 DeepSeek Harness Desktop contributors
+
+This product includes software developed by DeepSeek:
+
+  @deepseek-ai/dsh and its plugin packages
+  https://github.com/deepseek-ai/deepseek-harness
+  Licensed under the MIT License.
+
+The packaged application bundles the above kernel and its dependencies. Their
+licences are redistributed inside the application resources, under
+resources/kernel/node_modules/, alongside the code they cover.
+
+TRADEMARKS
+
+"DeepSeek" and the DeepSeek whale logo are trademarks of their respective owner.
+The application icon in assets/ is derived from the favicon shipped in the
+upstream @deepseek-ai/dsh-web-frontend package, recomposed for use as a desktop
+application icon.
+
+This project is an independent, community-maintained desktop shell. It is not
+produced, endorsed, or supported by DeepSeek. Use of the marks here is
+descriptive — to identify the upstream runtime this shell launches — and does
+not assert any claim to them. Anyone redistributing a modified version should
+replace the icon and product name to avoid implying an affiliation that does
+not exist.
