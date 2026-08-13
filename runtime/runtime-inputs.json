@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "target": {
+    "platform": "win32",
+    "arch": "x64"
+  },
+  "publicSource": {
+    "repository": "https://github.com/deepseek-ai/deepseek-harness",
+    "commit": "47f943859bef60e4160492346772ded9b24f765a",
+    "license": "MIT"
+  },
+  "resolver": {
+    "package": "pnpm",
+    "version": "11.21.0",
+    "integrity": "sha512-UhcFvOaJkk6scvWjWHEi82JonvZXHlW6gAdv1jfBETLs/62ib61Op5xIW/3b/T1aKlsFgFp36JPeceyKbMo7sQ==",
+    "shasum": "596bef0a53c8692c4bef9c9e5889ee4ba704a4c3",
+    "lockSha256": "983ae4b733984b71cc6f3f9f4148f1a703e3a3a718b3867c081a73cb98a100dc"
+  },
+  "node": {
+    "version": "22.22.0",
+    "archiveUrl": "https://nodejs.org/download/release/v22.22.0/node-v22.22.0-win-x64.zip",
+    "archiveSha256": "c97fa376d2becdc8863fcd3ca2dd9a83a9f3468ee7ccf7a6d076ec66a645c77a",
+    "archiveSize": 35556852,
+    "executableRelativePath": "node-v22.22.0-win-x64/node.exe",
+    "executableSha256": "bae898add4643fcf890a83ad8ae56e20dce7e781cab161a53991ceba70c99ffb",
+    "executableSize": 85804032,
+    "licenseRelativePath": "node-v22.22.0-win-x64/LICENSE",
+    "licenseSha256": "339c50294da6a84322dcbe7285b57b248123bd4d9e37a2f72d68d5abf2574783"
+  },
+  "dsh": {
+    "package": "@deepseek-ai/dsh",
+    "version": "0.1.0-rc.6",
+    "tarball": "https://registry.npmjs.org/@deepseek-ai/dsh/-/dsh-0.1.0-rc.6.tgz",
+    "integrity": "sha512-brpZfED7ieRa2PQ5tUxMhHrM1pb2CmKFVM/f6yMULBDMicahk+Z2OsHgTwTDnoiZm23Ftu9rQz0NN4pflaoJcg==",
+    "shasum": "de9fbf39056c7f4e658a3e284cb1d66ebc86d040",
+    "entryRelativePath": "node_modules/@deepseek-ai/dsh/lib/bin.js",
+    "entrySha256": "c0226687bb20f45c603ec6fe50f3de16d1c3510c3a803304ec575ef9bc366c62",
+    "licenseRelativePath": "node_modules/@deepseek-ai/dsh/LICENSE",
+    "licenseSha256": "ebb4f09972aee8608be255debaf78451a68e95c290f55c240dec2ecfa16ea6be",
+    "frontendIndexRelativePath": "node_modules/@deepseek-ai/dsh-web-frontend/dist/index.html",
+    "frontendIndexSha256": "85b42d12a45dd4a3acea9b11237c6eee3f0d374281620a29ace088f2d24246c5",
+    "frontendIndexSize": 676,
+    "native": {
+      "nodePtyVersion": "1.1.0",
+      "nodePtyIntegrity": "sha512-20JqtutY6JPXTUnL0ij1uad7Qe1baT46lyolh2sSENDd4sTzKZ4nmAFkeAARDKwmlLjPx6XKRlwRUxwjOy+lUg==",
+      "koffiPlatformPackage": "@koromix/koffi-win32-x64",
+      "koffiPlatformVersion": "3.1.4",
+      "files": [
+        { "relativePath": "node_modules/.pnpm/node-pty@1.1.0/node_modules/node-pty/prebuilds/win32-x64/pty.node", "sha256": "ae323edd0835ee7b9e18cc96a7b2bb4b8173ff768317d178af2788406feb71ff", "size": 303104 },
+        { "relativePath": "node_modules/.pnpm/node-pty@1.1.0/node_modules/node-pty/prebuilds/win32-x64/conpty.node", "sha256": "ee8f4e6f4dad71939eecfda11de249400e34bfefe4c8b48af13f3b5476f4035b", "size": 312320 },
+        { "relativePath": "node_modules/.pnpm/node-pty@1.1.0/node_modules/node-pty/prebuilds/win32-x64/conpty_console_list.node", "sha256": "879dd94cfc79f1e263a00077597ae9448a5394b7d193381aaa50d992a1f91090", "size": 134656 },
+        { "relativePath": "node_modules/.pnpm/node-pty@1.1.0/node_modules/node-pty/prebuilds/win32-x64/winpty-agent.exe", "sha256": "0c4834a0ab2a4f8c855a2f1db9b21fa6e5fc324ae8e3c82addd53d503d999825", "size": 307712 },
+        { "relativePath": "node_modules/.pnpm/node-pty@1.1.0/node_modules/node-pty/prebuilds/win32-x64/winpty.dll", "sha256": "e1cb26d868c954ba26817bedf3e4a5744e4ca2030adf51a7156e5ff2fadb881b", "size": 256000 },
+        { "relativePath": "node_modules/.pnpm/node-pty@1.1.0/node_modules/node-pty/prebuilds/win32-x64/conpty/OpenConsole.exe", "sha256": "d1fe7faa62f9e955e2ac2371f95d7e5513df4d496255097158f979c94782c5fc", "size": 1148448 },
+        { "relativePath": "node_modules/.pnpm/node-pty@1.1.0/node_modules/node-pty/prebuilds/win32-x64/conpty/conpty.dll", "sha256": "7c7430632052ff703540b68371ec43821820aa1335d8e11dfbcd9ff00e9daaed", "size": 109600 },
+        { "relativePath": "node_modules/.pnpm/@koromix+koffi-win32-x64@3.1.4/node_modules/@koromix/koffi-win32-x64/win32_x64/koffi.node", "sha256": "96d76a15753e6588abd7a4494985230b795ef8490eb0ebaeb255836bacf2b211", "size": 843776 }
+      ]
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "name": "deepseek-harness-desktop",
+  "version": "0.1.0-alpha.1",
+  "private": true,
+  "description": "Unofficial community desktop shell for DeepSeek Harness",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "main": "src/main.js",
+  "scripts": {
+    "test": "node --test src/*.test.js tools/*.test.js",
+    "runtime:materialize": "node tools/materialize-runtime.js",
+    "start": "electron .",
+    "dist:dir": "electron-builder --win dir --x64"
+  },
+  "devDependencies": {
+    "electron": "43.4.0",
+    "electron-builder": "26.15.3",
+    "extract-zip": "2.0.1"
+  },
+  "build": {
+    "appId": "io.github.deepseek-harness-desktop",
+    "productName": "DeepSeek Harness Desktop",
+    "asar": true,
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/runtime",
+        "to": "runtime"
+      }
+    ],
+    "win": {
+      "target": [
+        "dir"
+      ]
+    }
+  }
+}

@@ -1,4 +1,6 @@
 node_modules/
+resources/runtime/
+runtime/node_modules/
 dist/
 out/
 build/

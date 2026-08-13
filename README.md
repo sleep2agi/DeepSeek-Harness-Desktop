@@ -3,8 +3,8 @@
 An unofficial community desktop shell for the public
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) runtime.
 
-This repository is intentionally at the bootstrap stage. Product code, runtime packaging, and release
-artifacts are not yet available. The public delivery plan and acceptance evidence are tracked in
+The repository is building an original Electron shell around an exact public Harness runtime. Runtime
+inputs and lifecycle code are reviewable, but no release artifact is available yet. The delivery plan and evidence are tracked in
 [issue #1](https://github.com/sleep2agi/DeepSeek-Harness-Desktop/issues/1).
 
 ## Independence

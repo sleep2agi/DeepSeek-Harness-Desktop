@@ -1,0 +1,10 @@
+{
+  "name": "deepseek-harness-desktop-runtime",
+  "version": "0.1.0-alpha.1",
+  "private": true,
+  "license": "MIT",
+  "packageManager": "pnpm@11.21.0+sha512.a1c15f38e689924eac72f5a35471a2f36268aef6571e55ba80076fd637c44cb2ecffada26fad48a7fe9bfd3d5a2e4b95805a77e8925e71ec9a6cca3bb10edeb1",
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.1.0-rc.6"
+  }
+}
