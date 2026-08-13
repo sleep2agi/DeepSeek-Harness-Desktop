@@ -14,6 +14,7 @@ resources/kernel/
 # --- Build output ---
 out/
 dist/
+build/
 release/
 *.tsbuildinfo
 

@@ -1,6 +1,7 @@
 # DeepSeek Harness Desktop
 
-A desktop shell for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) agent runtime.
+An unofficial community desktop shell for the public
+[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) agent runtime.
 
 `dsh` is a command-line agent runtime that also serves a full web UI. This project wraps
 that runtime in a desktop application: it starts the kernel as a local child process,
@@ -133,9 +134,20 @@ they can be tested directly:
       preview; `buildShellPatch({ useBrowseDirectoryPicker: true })` selects the non-native
       implementation, and it is not enabled by default yet
 
+## Independence
+
+Everything here is written from public sources against pinned public dependencies. It does
+not copy private product code, and contains no organization-specific branding,
+authentication clients, private endpoints, update feeds, credentials, or telemetry. The
+`scan:leaks` check in CI enforces this against the working tree and the committed history,
+and fails the build rather than warning.
+
+This project is not affiliated with or endorsed by DeepSeek.
+
 ## Licence
 
-MIT — see [LICENSE](LICENSE).
+Repository-authored code is MIT — see [LICENSE](LICENSE).
 
 This project bundles the upstream `@deepseek-ai/dsh` kernel, which is also MIT-licensed.
-Its licence and notices are redistributed with the packaged application.
+Third-party components retain their own licences, redistributed with the packaged
+application; see [NOTICE](NOTICE) for attribution and the trademark position.
