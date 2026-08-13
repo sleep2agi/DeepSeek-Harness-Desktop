@@ -1,0 +1,115 @@
+# DeepSeek Harness Desktop
+
+A desktop shell for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) agent runtime.
+
+`dsh` is a command-line agent runtime that also serves a full web UI. This project wraps
+that runtime in a desktop application: it starts the kernel as a local child process,
+waits until it is genuinely serving, and shows its UI in a hardened window — so the
+runtime can be launched by double-clicking rather than from a terminal.
+
+> **Status: early development.** The kernel itself is an upstream developer preview
+> (`0.1.0-rc.x`) whose configuration surface is still changing. No installer has been
+> published yet; see [Roadmap](#roadmap) for what is and is not done.
+
+## What this is, and what it is not
+
+This repository contains **only the desktop shell**. All agent behaviour — models, tools,
+sessions, permissions, the web UI — comes from the upstream kernel and its plugins.
+
+The shell owns four things, and deliberately nothing else:
+
+| Concern | What the shell does |
+|---|---|
+| **Process** | Starts `dsh` as a child process on a free port, and shuts down the whole process tree on exit. |
+| **Readiness** | Waits for a real HTTP response from *this* launch before showing a window. |
+| **Window** | Applies a fixed security policy: sandboxed renderer, exact-origin navigation allowlist, `http`/`https`-only external links. |
+| **Configuration** | Expresses its preferences as a patch overlay, through the kernel's own supported mechanism, without modifying upstream code. |
+
+Nothing upstream is patched or vendored-and-edited. The kernel is installed from npm at a
+pinned version, and every shell preference goes through `--patch`, which is a first-class
+part of the launcher's configuration layering.
+
+## Design notes
+
+A few decisions that are easy to get wrong, and why this shell makes them the way it does.
+
+**An open port is not a ready server.** The kernel's web server binds its port during
+startup, and a plugin failing afterwards can still bring the process down. In that window
+a TCP connection succeeds while nothing is being served, and a window pointed at it shows
+a blank page. Readiness therefore requires a real HTTP 2xx/3xx response.
+
+**Readiness is bound to one launch.** Every probe attempt re-checks that the process being
+waited on is still the current one. Otherwise a kernel that died and left its port to
+another program on the machine would answer the probe perfectly well — with someone else's
+server.
+
+**Navigation is compared as an exact origin.** `startsWith('http://127.0.0.1:')` also
+matches any other service running locally, and `includes('127.0.0.1')` matches
+`http://evil.example/?x=127.0.0.1`. The loaded page decides its own links; the shell does
+not get to assume they are benign.
+
+**Secrets are redacted as they enter the log buffer,** not as they leave it. Redacting at
+read time still leaves the plaintext sitting in this process's memory until then. The
+matching is by shape and cannot be complete — it is a second line of defence, not a
+guarantee.
+
+**The kernel gets its own `DSH_HOME`,** and every inherited `DSH_*` variable is dropped.
+Sharing a home directory with a `dsh` the user installed themselves would have the two
+overwrite each other's configuration, and would put the user's own stored credentials
+within reach of this process.
+
+**Telemetry is switched off explicitly.** Upstream already defaults it to disabled; the
+shell states it anyway, so the default is a property of this application rather than of
+whichever kernel version happens to be bundled.
+
+## Requirements
+
+- **Node.js ≥ 22.15.0** — the kernel uses `zlib.createZstdDecompress`, which does not
+  exist in earlier versions. On an older runtime it fails later, at an unrelated-looking
+  place, so the shell checks up front.
+- **Windows, macOS, or Linux.** Windows is what has been exercised most so far.
+
+## Development
+
+```sh
+npm install          # shell dependencies (Electron, builder, types)
+npm test             # unit tests for every load-bearing decision — no network, no Electron
+npm run kernel:install   # fetch the pinned kernel into resources/kernel
+npm start            # launch the shell against it
+```
+
+The kernel version is pinned in [`upstream.lock.json`](upstream.lock.json), which is the
+single source of truth for it. Upgrading is an explicit commit, not something a rebuild
+does on its own — upstream is a developer preview and documents that it will make
+breaking changes.
+
+### Layout
+
+Load-bearing *decisions* live in plain modules with no Electron or filesystem imports, so
+they can be tested directly:
+
+| Module | Decides |
+|---|---|
+| `src/window-policy.js` | Where the window may navigate; what may be handed to the OS. |
+| `src/kernel-runtime.js` | The kernel's argument vector and environment. |
+| `src/readiness.js` | When the kernel counts as ready. |
+| `src/log-redact.js` | What may enter the log buffer, and how much is kept. |
+
+`src/main.js` does IO and orchestration only.
+
+## Roadmap
+
+- [x] Kernel launch, argument and environment construction
+- [x] Readiness probe bound to a single launch
+- [x] Window and navigation security policy
+- [x] Bounded, redacted log capture
+- [ ] Packaged installers (Windows first)
+- [ ] Bundled Node runtime, so the app does not depend on the user's Node version
+- [ ] Workspace picker fix ([upstream issue](https://github.com/deepseek-ai/deepseek-harness/issues) — the native picker crashes on Windows; the shell will select the non-native implementation until it is fixed)
+
+## Licence
+
+MIT — see [LICENSE](LICENSE).
+
+This project bundles the upstream `@deepseek-ai/dsh` kernel, which is also MIT-licensed.
+Its licence and notices are redistributed with the packaged application.
