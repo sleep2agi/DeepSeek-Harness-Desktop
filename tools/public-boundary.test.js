@@ -49,21 +49,38 @@ check("credential-shaped assignment is rejected", () => {
 })
 
 check("private endpoint is rejected", () => {
-  const endpoint = "https://service." + "internal/v1"
-  assert.equal(scanEntries([{ name: "config.json", text: endpoint }])[0].rule, "private-network-url")
+  const findings = scanEntries([
+    { name: "a.json", text: "https://service." + "internal/v1" },
+    { name: "b.json", text: "http://192.168.1.20/api" },
+    { name: "c.json", text: "http://localhost:3000/" },
+  ])
+  assert.deepEqual(findings.map((value) => value.rule), ["private-network-url", "private-network-url", "private-network-url"])
+  assert.deepEqual(scanEntries([{ name: "local-runtime.json", text: "http://127.0.0.1:43127/" }]), [])
 })
 
 check("developer-machine paths are rejected", () => {
   const findings = scanEntries([
     { name: "a.txt", text: ["C:", "Users", "developer", "project"].join("\\") },
     { name: "b.txt", text: ["", "home", "developer", "project"].join("/") },
+    { name: "c.txt", text: "C:/users/developer/project/" },
   ])
-  assert.deepEqual(findings.map((value) => value.rule), ["windows-user-path", "unix-user-path"])
+  assert.deepEqual(findings.map((value) => value.rule), ["windows-user-path", "unix-user-path", "windows-user-path", "unix-user-path"])
 })
 
 check("unknown tracked binary surface fails closed", () => {
   assert.equal(scanEntries([{ name: "asset.exe", text: "" }])[0].rule, "unknown-tracked-binary-surface")
+  assert.equal(scanEntries([{ name: "payload.js", bytes: Buffer.from([0, 1, 2, 3]) }])[0].rule, "unknown-tracked-binary-surface")
 })
 
-assert.equal(cases, 8)
+check("private identity in a tracked path is rejected", () => {
+  const identity = ["tm", "work"].join("")
+  assert.equal(scanEntries([{ name: `packages/${identity}/client.js`, text: "public code" }])[0].rule, "private-product-identity-in-path")
+})
+
+check("tracked symlink blob text is scanned rather than its target", () => {
+  const marker = ["PRIVATE", "PRODUCT", "MARKER", "DO", "NOT", "SHIP"].join("_")
+  assert.equal(scanEntries([{ name: "link.js", bytes: Buffer.from(marker) }])[0].rule, "synthetic-private-product-marker")
+})
+
+assert.equal(cases, 10)
 console.log(`RESULT cases=${cases} failures=0 skipped=0`)
