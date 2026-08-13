@@ -8,8 +8,8 @@ waits until it is genuinely serving, and shows its UI in a hardened window — s
 runtime can be launched by double-clicking rather than from a terminal.
 
 > **Status: early development.** The kernel itself is an upstream developer preview
-> (`0.1.0-rc.x`) whose configuration surface is still changing. No installer has been
-> published yet; see [Roadmap](#roadmap) for what is and is not done.
+> (`0.1.0-rc.x`) whose configuration surface is still changing. Windows is the platform
+> that has been built and run end to end; see [Roadmap](#roadmap) for the rest.
 
 ## What this is, and what it is not
 
@@ -62,12 +62,35 @@ within reach of this process.
 shell states it anyway, so the default is a property of this application rather than of
 whichever kernel version happens to be bundled.
 
+**The kernel runs on its own bundled Node, not on Electron's.** Those are different
+runtimes, and the difference is not theoretical. With an identical kernel and an identical
+configuration, launched under Electron-as-Node the kernel aborts during startup:
+
+```
+failed to apply loader entry … (@deepseek-ai/cordis-plugin-hmr):
+  --expose-internals is required for HMR service
+```
+
+and on a stock Node build of the same major version it starts cleanly. Notably this
+happens *after* the web server is already answering HTTP — so even a real HTTP response is
+not proof that the process will stay up, which is why an unexpected kernel exit is
+reported rather than silently leaving a window pointed at nothing.
+
+The bundled runtime is downloaded from nodejs.org, checked against the SHA-256 published
+in that release's `SHASUMS256.txt`, and then asked what version it is. Both checks fail the
+build rather than warn.
+
 ## Requirements
 
-- **Node.js ≥ 22.15.0** — the kernel uses `zlib.createZstdDecompress`, which does not
-  exist in earlier versions. On an older runtime it fails later, at an unrelated-looking
-  place, so the shell checks up front.
-- **Windows, macOS, or Linux.** Windows is what has been exercised most so far.
+**To run a packaged build:** nothing. The kernel and its Node runtime are inside the
+installer.
+
+**To develop:** Node.js ≥ 22.15.0 — the kernel uses `zlib.createZstdDecompress`, which does
+not exist in earlier versions.
+
+Windows is built and verified end to end. macOS and Linux are expected to work but have not
+been exercised; the bundled-runtime step is currently Windows-only and falls back to the
+system Node elsewhere.
 
 ## Development
 
@@ -103,9 +126,12 @@ they can be tested directly:
 - [x] Readiness probe bound to a single launch
 - [x] Window and navigation security policy
 - [x] Bounded, redacted log capture
-- [ ] Packaged installers (Windows first)
-- [ ] Bundled Node runtime, so the app does not depend on the user's Node version
-- [ ] Workspace picker fix ([upstream issue](https://github.com/deepseek-ai/deepseek-harness/issues) — the native picker crashes on Windows; the shell will select the non-native implementation until it is fixed)
+- [x] Bundled, checksum-verified Node runtime
+- [x] Windows installer, verified by launching it and loading the UI
+- [ ] macOS and Linux builds
+- [ ] Workspace picker fix — the native picker crashes on Windows in the current kernel
+      preview; `buildShellPatch({ useBrowseDirectoryPicker: true })` selects the non-native
+      implementation, and it is not enabled by default yet
 
 ## Licence
 

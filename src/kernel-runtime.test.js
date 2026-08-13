@@ -130,6 +130,17 @@ describe('buildKernelEnv', () => {
     assert.equal(env.ELECTRON_RUN_AS_NODE, undefined)
   })
 
+  it('sets ELECTRON_RUN_AS_NODE when the Electron binary is standing in for Node', () => {
+    // Without this the Electron binary treats the script path as an application to open.
+    // It does not fail loudly: the packaged app shows no window and logs nothing useful.
+    const env = buildKernelEnv({
+      parentEnv: {},
+      dshHome: '/app/home',
+      runElectronAsNode: true,
+    })
+    assert.equal(env.ELECTRON_RUN_AS_NODE, '1')
+  })
+
   it('lets explicit extras win over the inherited environment', () => {
     const env = buildKernelEnv({
       parentEnv: { PATH: '/usr/bin' },

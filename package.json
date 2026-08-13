@@ -23,10 +23,9 @@
     "test:e2e": "node --test \"tests/**/*.test.js\"",
     "test:all": "npm run test && npm run test:e2e",
     "typecheck": "tsc --noEmit",
-    "kernel:install": "node tools/install-kernel.js",
-    "kernel:verify": "node tools/verify-kernel.js",
+    "kernel:install": "node tools/install-kernel.js && node tools/install-node.js",
     "scan:leaks": "node tools/scan-leaks.js",
-    "prepack:app": "npm run test && npm run scan:leaks && npm run kernel:install && npm run kernel:verify",
+    "prepack:app": "npm run test && npm run scan:leaks && npm run kernel:install",
     "pack": "npm run prepack:app && electron-builder --dir",
     "dist": "npm run prepack:app && electron-builder --win --publish never"
   },
@@ -52,13 +51,7 @@
       "NOTICE"
     ],
     "asar": true,
-    "extraResources": [
-      {
-        "from": "resources/kernel",
-        "to": "kernel",
-        "filter": ["**/*"]
-      }
-    ],
+    "afterPack": "tools/after-pack.js",
     "win": {
       "icon": "assets/icon.ico",
       "target": [

@@ -39,7 +39,7 @@ let mainWindow = null
  * `extraResources` places it beside the asar archive rather than inside it: files in an
  * asar cannot be spawned, so a kernel bundled the usual way would fail only once packaged.
  *
- * @returns {{binPath: string, nodePath: string}}
+ * @returns {{binPath: string, nodePath: string, runElectronAsNode: boolean}}
  */
 function resolveKernelPaths() {
   const root = app.isPackaged ? join(process.resourcesPath, 'kernel') : join(here, '..', 'resources', 'kernel')
@@ -47,11 +47,16 @@ function resolveKernelPaths() {
 
   // A bundled Node is preferred when present: the kernel's dependencies are published and
   // tested against Node releases, and Electron's bundled Node is a different runtime that
-  // merely resembles one.
+  // merely resembles one. Falling back to Electron is supported, but it has to be told to
+  // behave as Node — see buildKernelEnv.
   const bundled = join(root, process.platform === 'win32' ? 'node.exe' : 'node')
-  const nodePath = existsSync(bundled) ? bundled : process.execPath
+  const hasBundledNode = existsSync(bundled)
 
-  return { binPath, nodePath }
+  return {
+    binPath,
+    nodePath: hasBundledNode ? bundled : process.execPath,
+    runElectronAsNode: !hasBundledNode,
+  }
 }
 
 /**
@@ -61,17 +66,19 @@ function resolveKernelPaths() {
  * @throws when the kernel cannot be started or never becomes ready
  */
 async function startKernel() {
-  const { binPath, nodePath } = resolveKernelPaths()
+  const { binPath, nodePath, runElectronAsNode } = resolveKernelPaths()
   if (!existsSync(binPath)) {
     throw new Error(
       `The kernel is not installed at:\n  ${binPath}\n\nRun "npm run kernel:install" first.`,
     )
   }
 
-  // Electron's own binary answers `--version` as Electron, not as Node, so the check only
-  // means something when a separate Node binary is being used.
-  if (nodePath !== process.execPath && !isSupportedNodeVersion(process.version)) {
-    throw new Error(`The kernel needs Node 22.15.0 or newer; this runtime is ${process.version}.`)
+  // When Electron is standing in for Node, the runtime the kernel gets is the one this
+  // process is already running on, so `process.version` is exactly the version to check.
+  if (runElectronAsNode && !isSupportedNodeVersion(process.version)) {
+    throw new Error(
+      `The kernel needs Node 22.15.0 or newer; this build of Electron provides ${process.version}.`,
+    )
   }
 
   const dshHome = join(app.getPath('userData'), 'kernel-home')
@@ -88,11 +95,29 @@ async function startKernel() {
 
   const port = await findFreePort(HOST)
   const args = buildKernelArgs({ binPath, port, patchFiles })
-  const env = buildKernelEnv({ parentEnv: process.env, dshHome })
+  const env = buildKernelEnv({ parentEnv: process.env, dshHome, runElectronAsNode })
 
   const process_ = new KernelProcess()
   process_.start({ nodePath, args, env, cwd: app.getPath('home') })
   kernel = process_
+
+  // A kernel that dies after the window is up leaves the window showing a page it can no
+  // longer reach, with nothing anywhere saying why. Record it, and say so.
+  process_.onUnexpectedExit(({ code, signal }) => {
+    const logPath = join(app.getPath('userData'), 'kernel-exit.log')
+    void writeFile(
+      logPath,
+      `${new Date().toISOString()}\nkernel exited unexpectedly: code=${String(code)} signal=${String(signal)}\n\n${process_.logText()}\n`,
+      'utf8',
+    ).catch(() => undefined)
+
+    if (mainWindow !== null && !mainWindow.isDestroyed()) {
+      dialog.showErrorBox(
+        'The agent runtime stopped',
+        `The kernel exited unexpectedly (code ${String(code)}).\n\nIts output was written to:\n${logPath}`,
+      )
+    }
+  })
 
   const origin = kernelOrigin(HOST, port)
   const readiness = await waitForReady({
@@ -200,7 +225,20 @@ if (!app.requestSingleInstanceLock()) {
       mainWindow = createWindow(origin)
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      dialog.showErrorBox('DeepSeek Harness Desktop could not start', message)
+
+      // The dialog is transient and truncates; a startup failure is exactly when someone
+      // needs the whole story, so it also goes to a file whose path the dialog names.
+      const logPath = join(app.getPath('userData'), 'startup-error.log')
+      try {
+        await writeFile(logPath, `${new Date().toISOString()}\n\n${message}\n`, 'utf8')
+      } catch {
+        // Reporting the original failure matters more than reporting this one.
+      }
+
+      dialog.showErrorBox(
+        'DeepSeek Harness Desktop could not start',
+        `${message}\n\nWritten to:\n${logPath}`,
+      )
       await shutdown()
       app.exit(1)
     }

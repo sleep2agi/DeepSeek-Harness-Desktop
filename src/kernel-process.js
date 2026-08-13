@@ -52,6 +52,9 @@ export class KernelProcess {
   #exited = false
   /** @type {number | null} */
   #exitCode = null
+  /** @type {Array<(info: {code: number | null, signal: string | null}) => void>} */
+  #exitListeners = []
+  #stopping = false
 
   /** @param {number} [logLimit] */
   constructor(logLimit = 2000) {
@@ -99,6 +102,13 @@ export class KernelProcess {
       this.#exited = true
       this.#exitCode = code
       this.#log.push(`kernel exited with code=${String(code)} signal=${String(signal)}`)
+
+      // Only an exit we did not ask for is worth telling anyone about. A kernel that dies
+      // after the window is already open is otherwise completely silent: the window stays
+      // up showing a page it can no longer reach.
+      if (!this.#stopping) {
+        for (const listener of this.#exitListeners) listener({ code, signal })
+      }
     })
 
     child.stdout?.setEncoding('utf8')
@@ -110,6 +120,16 @@ export class KernelProcess {
   /** @returns {boolean} whether this launch is still alive */
   isRunning() {
     return this.#child !== null && !this.#exited
+  }
+
+  /**
+   * Registers a listener for an exit that was not requested.
+   *
+   * @param {(info: {code: number | null, signal: string | null}) => void} listener
+   * @returns {void}
+   */
+  onUnexpectedExit(listener) {
+    this.#exitListeners.push(listener)
   }
 
   /** @returns {number | undefined} */
@@ -147,6 +167,7 @@ export class KernelProcess {
   async stop({ timeoutMs = 5_000 } = {}) {
     const child = this.#child
     if (child === null || this.#exited) return
+    this.#stopping = true
 
     const { pid } = child
     if (pid === undefined) return

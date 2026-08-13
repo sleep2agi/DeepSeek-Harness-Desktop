@@ -98,10 +98,12 @@ export function buildKernelArgs({ binPath, port, patchFiles = [] }) {
  * @param {object} options
  * @param {NodeJS.ProcessEnv} options.parentEnv - the environment to inherit from
  * @param {string} options.dshHome - absolute path to this app's private kernel home
+ * @param {boolean} [options.runElectronAsNode] - true when the kernel is being launched
+ *   with the Electron binary standing in for Node
  * @param {Record<string, string>} [options.extra] - additional variables to set
  * @returns {Record<string, string>}
  */
-export function buildKernelEnv({ parentEnv, dshHome, extra = {} }) {
+export function buildKernelEnv({ parentEnv, dshHome, runElectronAsNode = false, extra = {} }) {
   /** @type {Record<string, string>} */
   const env = {}
 
@@ -111,9 +113,18 @@ export function buildKernelEnv({ parentEnv, dshHome, extra = {} }) {
     env[key] = value
   }
 
-  // Electron sets this so a helper process runs as plain Node. A kernel started from the
-  // packaged app inherits it; leaving it set would leak into anything the kernel spawns.
-  delete env.ELECTRON_RUN_AS_NODE
+  // The Electron binary only behaves as Node when this is set; without it, handing it a
+  // script path makes it try to open that path as an application instead — which fails as
+  // a window that never appears rather than as an error on stderr.
+  //
+  // It is removed in every other case. A kernel launched from the packaged app would
+  // otherwise inherit it and pass it down to its own child processes, turning any Electron
+  // they start into a headless Node for reasons nothing in this code explains.
+  if (runElectronAsNode) {
+    env.ELECTRON_RUN_AS_NODE = '1'
+  } else {
+    delete env.ELECTRON_RUN_AS_NODE
+  }
 
   env.DSH_HOME = dshHome
   // The upstream telemetry plugin defaults to DISABLED; state it anyway, so the default
