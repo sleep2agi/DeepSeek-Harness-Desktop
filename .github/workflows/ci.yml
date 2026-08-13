@@ -26,6 +26,21 @@ jobs:
           # scan-leaks inspects the committed history, not just the working tree.
           fetch-depth: 0
 
+      - name: Fetch and prove the complete public branch set
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          git fetch --no-tags --prune origin '+refs/pull/*/head:refs/remotes/pull-audit/*'
+          git ls-remote --heads origin | awk '{sub("refs/heads/", "", $2); print $2}' | sort > "$RUNNER_TEMP/remote-heads"
+          git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin | grep -v '^HEAD$' | sort > "$RUNNER_TEMP/local-heads"
+          test -s "$RUNNER_TEMP/remote-heads"
+          diff -u "$RUNNER_TEMP/remote-heads" "$RUNNER_TEMP/local-heads"
+          git ls-remote origin 'refs/pull/*/head' | awk '{sub("refs/pull/", "", $2); sub("/head", "", $2); print $2}' | sort > "$RUNNER_TEMP/remote-pulls"
+          git for-each-ref --format='%(refname:strip=3)' refs/remotes/pull-audit | sort > "$RUNNER_TEMP/local-pulls"
+          test -s "$RUNNER_TEMP/remote-pulls"
+          diff -u "$RUNNER_TEMP/remote-pulls" "$RUNNER_TEMP/local-pulls"
+
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: '22.15'
@@ -49,6 +64,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Fetch and prove the complete public branch set
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          git fetch --no-tags --prune origin '+refs/pull/*/head:refs/remotes/pull-audit/*'
+          git ls-remote --heads origin | awk '{sub("refs/heads/", "", $2); print $2}' | sort > "$RUNNER_TEMP/remote-heads"
+          git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin | grep -v '^HEAD$' | sort > "$RUNNER_TEMP/local-heads"
+          test -s "$RUNNER_TEMP/remote-heads"
+          diff -u "$RUNNER_TEMP/remote-heads" "$RUNNER_TEMP/local-heads"
+          git ls-remote origin 'refs/pull/*/head' | awk '{sub("refs/pull/", "", $2); sub("/head", "", $2); print $2}' | sort > "$RUNNER_TEMP/remote-pulls"
+          git for-each-ref --format='%(refname:strip=3)' refs/remotes/pull-audit | sort > "$RUNNER_TEMP/local-pulls"
+          test -s "$RUNNER_TEMP/remote-pulls"
+          diff -u "$RUNNER_TEMP/remote-pulls" "$RUNNER_TEMP/local-pulls"
 
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:

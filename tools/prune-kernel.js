@@ -21,6 +21,7 @@
  */
 
 import { readdir, rm, stat } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { dirname, extname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -163,8 +164,8 @@ async function treeSize(path) {
 }
 
 async function main() {
-  const platform = process.env.DSH_TARGET_PLATFORM ?? process.platform
-  const arch = process.env.DSH_TARGET_ARCH ?? process.arch
+  const manifest = JSON.parse(await readFile(join(repoRoot, 'package.json'), 'utf8'))
+  const { platform, arch } = configuredPackageTarget(manifest, process.platform, process.arch)
 
   const before = await treeSize(kernelDir)
   if (before.files === 0) {
@@ -184,11 +185,47 @@ async function main() {
   )
 }
 
-try {
-  await main()
-} catch (error) {
-  console.error(`\nprune-kernel failed: ${error instanceof Error ? error.message : String(error)}`)
-  process.exit(1)
+/**
+ * Derive the payload identity from the package that will actually be built. The host
+ * architecture is irrelevant: an ARM64 builder may still be producing an x64 package.
+ * Multiple architectures must be split into separate installs rather than pruned as one.
+ *
+ * @param {unknown} manifest
+ * @param {string} hostPlatform
+ * @param {string} hostArch
+ * @returns {{platform: string, arch: string}}
+ */
+function configuredPackageTarget(manifest, hostPlatform, hostArch) {
+  if (hostPlatform !== 'win32') return { platform: hostPlatform, arch: hostArch }
+  if (typeof manifest !== 'object' || manifest === null || !('build' in manifest)) {
+    throw new Error('package.json has no build target')
+  }
+  const build = manifest.build
+  if (typeof build !== 'object' || build === null || !('win' in build)) {
+    throw new Error('package.json has no Windows build target')
+  }
+  const win = build.win
+  if (typeof win !== 'object' || win === null || !('target' in win) || !Array.isArray(win.target)) {
+    throw new Error('package.json has no explicit Windows target architectures')
+  }
+  const architectures = new Set()
+  for (const target of win.target) {
+    if (typeof target !== 'object' || target === null || !('arch' in target) || !Array.isArray(target.arch)) continue
+    for (const arch of target.arch) if (typeof arch === 'string' && arch !== '') architectures.add(arch)
+  }
+  if (architectures.size !== 1) {
+    throw new Error(`expected exactly one Windows package architecture, found ${architectures.size}`)
+  }
+  return { platform: 'win32', arch: /** @type {string} */ ([...architectures][0]) }
 }
 
-export { isForeignPrebuild, DROP_EXTENSIONS, KEEP_NAMES }
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    await main()
+  } catch (error) {
+    console.error(`\nprune-kernel failed: ${error instanceof Error ? error.message : String(error)}`)
+    process.exit(1)
+  }
+}
+
+export { configuredPackageTarget, isForeignPrebuild, DROP_EXTENSIONS, KEEP_NAMES }

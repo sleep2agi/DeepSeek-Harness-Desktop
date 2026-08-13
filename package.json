@@ -19,7 +19,7 @@
   },
   "scripts": {
     "start": "electron .",
-    "test": "node tools/run-tests.js src",
+    "test": "node tools/run-tests.js src tools",
     "test:e2e": "node tools/run-tests.js tests",
     "test:all": "npm run test && npm run test:e2e",
     "typecheck": "tsc --noEmit",
