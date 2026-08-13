@@ -16,11 +16,20 @@
  * @module tools/after-pack
  */
 
-import { cp, stat } from 'node:fs/promises'
-import { dirname, join, resolve } from 'node:path'
+import { cp, readdir, rm, stat } from 'node:fs/promises'
+import { basename, dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+
+/**
+ * Chromium UI locales to keep.
+ *
+ * These translate Chromium's own surfaces — context menus, network error pages — not the
+ * application, whose interface is served by the kernel. Electron ships every locale it
+ * supports, which is tens of megabytes for strings almost no installation will read.
+ */
+const KEEP_LOCALES = new Set(['en-US', 'zh-CN'])
 
 /**
  * @param {{appOutDir: string, packager: {platform: {name: string}, appInfo: {productFilename: string}}}} context
@@ -44,6 +53,48 @@ export default async function afterPack(context) {
   await assertPresent(binPath, `the kernel entry point is missing from the package at ${binPath}`)
 
   console.log('  • kernel copied and verified')
+
+  await pruneLocales(isMac ? join(resourcesDir, '..', 'Resources') : context.appOutDir)
+}
+
+/**
+ * Removes Chromium locale files the application will not use.
+ *
+ * @param {string} appDir
+ * @returns {Promise<void>}
+ */
+async function pruneLocales(appDir) {
+  const localesDir = join(appDir, 'locales')
+
+  /** @type {string[]} */
+  let entries
+  try {
+    entries = await readdir(localesDir)
+  } catch {
+    return // No locales directory on this platform layout.
+  }
+
+  let removed = 0
+  let bytes = 0
+
+  for (const entry of entries) {
+    if (extname(entry) !== '.pak') continue
+    if (KEEP_LOCALES.has(basename(entry, '.pak'))) continue
+
+    const path = join(localesDir, entry)
+    try {
+      bytes += (await stat(path)).size
+      await rm(path, { force: true })
+      removed += 1
+    } catch {
+      // Leaving one behind costs space, not correctness.
+    }
+  }
+
+  console.log(
+    `  • pruned ${removed} locale files, ${(bytes / 1024 / 1024).toFixed(1)} MB` +
+      ` (kept ${[...KEEP_LOCALES].join(', ')})`,
+  )
 }
 
 /**

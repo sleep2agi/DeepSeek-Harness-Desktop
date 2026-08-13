@@ -92,6 +92,14 @@ The bundled runtime is downloaded from nodejs.org, checked against the SHA-256 p
 in that release's `SHASUMS256.txt`, and then asked what version it is. Both checks fail the
 build rather than warn.
 
+**What ships is not what npm installs.** An npm tree is published for developers: debug
+symbols, source maps, the TypeScript the JavaScript was built from, documentation, and
+prebuilt binaries for every platform. None of it is opened by a running application, and
+all of it would ship to every user — 180 MB of the installed size. `tools/prune-kernel.js`
+removes it, keeping licences and notices in every spelling, since redistributing
+MIT-licensed code without its licence text is a violation. The end-to-end test runs against
+the pruned kernel, so a size win that broke startup fails the build.
+
 ## Requirements
 
 **To run a packaged build:** nothing. The kernel and its Node runtime are inside the
