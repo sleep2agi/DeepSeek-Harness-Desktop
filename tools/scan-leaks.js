@@ -82,8 +82,13 @@ for (const path of trackedFiles()) {
 
 // History matters as much as the current tree: a secret removed in a later commit is
 // still served by every clone of the repository.
+//
+// Scoped to the commits reachable from HEAD rather than every ref. `--all` also covers
+// unmerged and experimental branches, whose contents are not what a release publishes —
+// and once such a branch is merged, its commits are reachable from HEAD anyway, so
+// nothing is lost by narrowing this.
 try {
-  const history = git(['log', '--all', '-p', '--no-color', '--diff-filter=AM'])
+  const history = git(['log', 'HEAD', '-p', '--no-color', '--diff-filter=AM'])
   for (const { name, pattern } of FORBIDDEN) {
     if (pattern.test(history)) findings.push(`git history: ${name}`)
   }
