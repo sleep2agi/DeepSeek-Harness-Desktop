@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import { scanEntries } from "./public-boundary.js"
 
 let cases = 0
@@ -92,5 +93,13 @@ check("tracked symlink blob text is scanned rather than its target", () => {
   assert.equal(scanEntries([{ name: "link.js", bytes: Buffer.from(marker) }])[0].rule, "synthetic-private-product-marker")
 })
 
-assert.equal(cases, 11)
+check("boundary workflow runs for pull requests and every branch or tag push", () => {
+  const workflow = readFileSync(new URL("../.github/workflows/public-boundary.yml", import.meta.url), "utf8")
+  assert.match(workflow, /^\s*pull_request:\s*$/m)
+  assert.match(workflow, /^\s*push:\s*$/m)
+  assert.match(workflow, /^\s*branches:\s*\["\*\*"\]\s*$/m)
+  assert.match(workflow, /^\s*tags:\s*\["\*\*"\]\s*$/m)
+})
+
+assert.equal(cases, 12)
 console.log(`RESULT cases=${cases} failures=0 skipped=0`)

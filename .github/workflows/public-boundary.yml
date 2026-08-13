@@ -3,7 +3,8 @@ name: public-boundary
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: ["**"]
+    tags: ["**"]
 
 permissions:
   contents: read
