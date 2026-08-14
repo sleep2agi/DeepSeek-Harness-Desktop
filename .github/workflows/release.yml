@@ -16,18 +16,20 @@ jobs:
   build:
     name: Build ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      # Repository policy requires every action to be pinned to a full commit SHA.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.tag || github.ref }}
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: '22.15'
 
@@ -40,6 +42,9 @@ jobs:
       - name: Scan for content that must not be published
         run: npm run scan:leaks
 
+      - name: Scan workflows for unpinned Actions
+        run: npm run scan:workflows --if-present
+
       # Fails on a version or integrity mismatch against upstream.lock.json, so a release
       # cannot be built from a kernel other than the pinned one.
       - name: Install the pinned kernel
@@ -51,7 +56,7 @@ jobs:
       - name: Build installers
         run: npx electron-builder --publish never
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: runner.os == 'Windows'
         with:
           name: installers-${{ matrix.os }}
@@ -60,7 +65,7 @@ jobs:
             release/*.zip
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: runner.os == 'macOS'
         with:
           name: installers-${{ matrix.os }}
@@ -74,16 +79,29 @@ jobs:
     name: Publish release
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: artifacts
 
+      # gh is on the runner. A third-party release action is not on the allow-list
+      # and would fail startup even if SHA-pinned.
       - name: Attach the installers to the release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ inputs.tag || github.ref_name }}
-          draft: true
-          generate_release_notes: true
-          files: artifacts/**/*
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tag="${{ inputs.tag || github.ref_name }}"
+          mapfile -t files < <(find artifacts -type f ! -name '.*' | sort)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "no artifacts to attach" >&2
+            exit 1
+          fi
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "${files[@]}" --clobber
+          else
+            gh release create "$tag" "${files[@]}" --draft --generate-notes --title "$tag"
+          fi

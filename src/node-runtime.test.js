@@ -25,6 +25,7 @@ describe('nodeRuntimeKey', () => {
     // A guessed `win-arm64` key would download 404 and fail the build only after
     // a network round-trip. Fail closed at the lookup.
     assert.equal(nodeRuntimeKey('win32', 'arm64'), null)
+    assert.equal(nodeRuntimeKey('linux', 'x64'), null)
     assert.equal(nodeRuntimeKey('aix', 'ppc64'), null)
   })
 })

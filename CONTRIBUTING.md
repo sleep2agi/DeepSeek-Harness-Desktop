@@ -65,7 +65,10 @@ is deliberately a decision someone makes, rather than something a rebuild does q
 ## Commits and pull requests
 
 - One concern per commit; explain *why* in the body, since the *what* is in the diff.
-- `npm test`, `npm run typecheck`, and `npm run scan:leaks` should pass before you push.
+- `npm test`, `npm run typecheck`, `npm run scan:leaks`, and `npm run scan:workflows`
+  should pass before you push. `scan:workflows` rejects `uses: actions/foo@v4` —
+  the repo requires a full commit SHA or GitHub Actions dies at startup and the
+  tests never run.
 - Describe what you actually verified. "Ran the app on macOS 15 arm64 and the window opened"
   is more useful than "should work".
 
