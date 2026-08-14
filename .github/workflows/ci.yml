@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -42,7 +42,11 @@ jobs:
 
   e2e:
     name: End-to-end
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -55,7 +59,8 @@ jobs:
         run: npm install --ignore-scripts --no-audit --no-fund
 
       # Verifies the pinned version and integrity as part of installing, so a registry
-      # serving something other than what upstream.lock.json names fails here.
+      # serving something other than what upstream.lock.json names fails here. On
+      # macOS this also downloads the darwin Node runtime and checks its SHA-256.
       - name: Install the pinned kernel
         run: npm run kernel:install
 

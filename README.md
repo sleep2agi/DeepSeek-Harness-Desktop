@@ -9,8 +9,9 @@ waits until it is genuinely serving, and shows its UI in a hardened window — s
 runtime can be launched by double-clicking rather than from a terminal.
 
 > **Status: early development.** The kernel itself is an upstream developer preview
-> (`0.1.0-rc.x`) whose configuration surface is still changing. Windows is the platform
-> that has been built and run end to end; see [Roadmap](#roadmap) for the rest.
+> (`0.1.0-rc.x`) whose configuration surface is still changing. Windows and macOS
+> (Apple Silicon and Intel) are the platforms that have been built end to end; see
+> [Roadmap](#roadmap) for the rest.
 
 | | |
 |:---:|:---:|
@@ -108,9 +109,9 @@ installer.
 **To develop:** Node.js ≥ 22.15.0 — the kernel uses `zlib.createZstdDecompress`, which does
 not exist in earlier versions.
 
-Windows is built and verified end to end. macOS and Linux are expected to work but have not
-been exercised; the bundled-runtime step is currently Windows-only and falls back to the
-system Node elsewhere.
+Windows and macOS ship a bundled, checksum-verified Node runtime, so a packaged build has
+no external requirements. Linux is expected to work but has not been exercised, and still
+falls back to the system Node.
 
 ## Development
 
@@ -119,6 +120,8 @@ npm install          # shell dependencies (Electron, builder, types)
 npm test             # unit tests for every load-bearing decision — no network, no Electron
 npm run kernel:install   # fetch the pinned kernel into resources/kernel
 npm start            # launch the shell against it
+npm run dist:mac     # signed-ad-hoc .dmg and .zip for this Mac
+npm run dist:win     # NSIS installer and .zip for Windows
 ```
 
 The kernel version is pinned in [`upstream.lock.json`](upstream.lock.json), which is the
@@ -148,10 +151,24 @@ they can be tested directly:
 - [x] Bounded, redacted log capture
 - [x] Bundled, checksum-verified Node runtime
 - [x] Windows installer, verified by launching it and loading the UI
-- [ ] macOS and Linux builds
+- [x] macOS build (Apple Silicon and Intel runtimes; `.dmg` + `.zip`)
+- [ ] Linux builds
 - [ ] Workspace picker fix — the native picker crashes on Windows in the current kernel
       preview; `buildShellPatch({ useBrowseDirectoryPicker: true })` selects the non-native
       implementation, and it is not enabled by default yet
+
+### macOS notes
+
+Packaged builds are ad-hoc signed, not notarized. A download from the internet will be
+quarantined by Gatekeeper. Right-click the app and choose Open, or:
+
+```sh
+xattr -dr com.apple.quarantine "/Applications/DeepSeek Harness Desktop.app"
+```
+
+A Mac launched from the Dock has a minimal `PATH`. The shell prepends Homebrew's usual
+locations (`/opt/homebrew/bin`, `/usr/local/bin`) so the kernel can still find `git` and
+the rest of a developer toolchain.
 
 ## Independence
 

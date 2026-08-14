@@ -4,6 +4,28 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] — 2026-08-14
+
+### Added
+
+- **macOS desktop build.** The shell now ships a checksum-verified Node runtime for
+  Apple Silicon and Intel (`darwin-arm64`, `darwin-x64`), packages a `.dmg` and a `.zip`,
+  and runs the same readiness / window-policy / process-tree shutdown path as Windows.
+- Unix kernel processes are spawned as their own process-group leader, so quitting the
+  app actually tears down the tools the kernel started rather than leaving them orphaned.
+- A Dock- or Finder-launched Mac app prepends Homebrew's usual `PATH` locations, so
+  `git` (and the rest of a developer toolchain) is visible to the kernel.
+
+### Changed
+
+- `npm run dist` builds for the current platform. `dist:win` and `dist:mac` select one
+  explicitly. CI and the release workflow now cover `macos-latest` as well as Windows.
+
+### Known limitations
+
+- Packaged Mac builds are ad-hoc signed, not notarized. Gatekeeper will warn on a
+  downloaded `.dmg`.
+
 ## [0.1.1] — 2026-08-14
 
 ### Changed
@@ -57,4 +79,6 @@ First preview. Windows is built and verified end to end; macOS and Linux are unt
 - Log redaction matches by shape and cannot be complete.
 - Installers are unsigned, so Windows SmartScreen will warn on first run.
 
+[0.1.2]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/tag/v0.1.2
+[0.1.1]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/tag/v0.1.1
 [0.1.0]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/tag/v0.1.0

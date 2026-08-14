@@ -66,7 +66,7 @@ is deliberately a decision someone makes, rather than something a rebuild does q
 
 - One concern per commit; explain *why* in the body, since the *what* is in the diff.
 - `npm test`, `npm run typecheck`, and `npm run scan:leaks` should pass before you push.
-- Describe what you actually verified. "Ran the app on Windows 11 and the window opened"
+- Describe what you actually verified. "Ran the app on macOS 15 arm64 and the window opened"
   is more useful than "should work".
 
 ## Reporting a problem

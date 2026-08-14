@@ -52,6 +52,16 @@ export default async function afterPack(context) {
   const binPath = join(destination, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js')
   await assertPresent(binPath, `the kernel entry point is missing from the package at ${binPath}`)
 
+  // Windows and macOS ship a bundled Node; Linux still falls back to the system
+  // runtime. A packaged Mac build without `node` would silently run the kernel
+  // under Electron-as-Node, which is the configuration this project exists to
+  // avoid.
+  if (isMac || context.packager.platform.name === 'windows') {
+    const nodeName = isMac ? 'node' : 'node.exe'
+    const nodePath = join(destination, nodeName)
+    await assertPresent(nodePath, `the bundled Node runtime is missing from the package at ${nodePath}`)
+  }
+
   console.log('  • kernel copied and verified')
 
   await pruneLocales(isMac ? join(resourcesDir, '..', 'Resources') : context.appOutDir)

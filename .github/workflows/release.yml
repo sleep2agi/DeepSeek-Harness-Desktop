@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest]
+        os: [windows-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -49,14 +49,25 @@ jobs:
         run: npm run test:e2e
 
       - name: Build installers
-        run: npx electron-builder --win --publish never
+        run: npx electron-builder --publish never
 
       - uses: actions/upload-artifact@v4
+        if: runner.os == 'Windows'
         with:
           name: installers-${{ matrix.os }}
           path: |
             release/*.exe
             release/*.zip
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'macOS'
+        with:
+          name: installers-${{ matrix.os }}
+          path: |
+            release/*.dmg
+            release/*.zip
+            release/*.blockmap
           if-no-files-found: error
 
   publish:
