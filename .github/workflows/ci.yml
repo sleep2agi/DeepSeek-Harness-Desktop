@@ -13,18 +13,21 @@ jobs:
   check:
     name: Test and scan
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      # Repository policy requires every action to be pinned to a full commit SHA.
+      # Tag refs (`@v4`) are rejected at startup — the job never runs.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # scan-leaks inspects the committed history, not just the working tree.
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: '22.15'
 
@@ -40,18 +43,22 @@ jobs:
       - name: Scan for content that must not be published
         run: npm run scan:leaks
 
+      - name: Scan workflows for unpinned Actions
+        run: npm run scan:workflows
+
   e2e:
     name: End-to-end
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: '22.15'
 
@@ -60,7 +67,8 @@ jobs:
 
       # Verifies the pinned version and integrity as part of installing, so a registry
       # serving something other than what upstream.lock.json names fails here. On
-      # macOS this also downloads the darwin Node runtime and checks its SHA-256.
+      # macOS / Windows this also downloads the platform Node runtime and checks
+      # its SHA-256. Linux still uses the runner Node for e2e.
       - name: Install the pinned kernel
         run: npm run kernel:install
 
