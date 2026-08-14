@@ -50,7 +50,7 @@ export function findUses(text) {
   const found = []
   const lines = text.split('\n')
   for (let index = 0; index < lines.length; index += 1) {
-    const match = /^\s*(?:-\s*)?uses:\s*(\S.*?)\s*$/.exec(lines[index] ?? '')
+    const match = /^\s*(?:-\s*)?uses\s*:\s*(\S.*?)\s*$/.exec(lines[index] ?? '')
     if (match === null) continue
     found.push({ line: index + 1, value: stripCommentAndQuotes(match[1] ?? '') })
   }

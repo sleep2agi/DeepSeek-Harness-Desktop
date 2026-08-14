@@ -42,6 +42,13 @@ describe('isPinnedGithubAction', () => {
 })
 
 describe('findUses', () => {
+  it('treats a space before the colon as a uses: key, not as noise', () => {
+    // `uses : actions/checkout@v4` is valid YAML. Missing it is how an unpinned
+    // action would pass the scanner and then die at GitHub startup.
+    const text = '      - uses : actions/checkout@v4\n'
+    assert.deepEqual(findUnpinnedUses(text), [{ line: 1, value: 'actions/checkout@v4' }])
+  })
+
   it('reads both mapping and list forms, and ignores a trailing comment', () => {
     const text = [
       'jobs:',

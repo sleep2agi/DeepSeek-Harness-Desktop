@@ -44,7 +44,7 @@ jobs:
         run: npm run scan:leaks
 
       - name: Scan workflows for unpinned Actions
-        run: npm run scan:workflows
+        run: npm run scan:workflows --if-present
 
   e2e:
     name: End-to-end

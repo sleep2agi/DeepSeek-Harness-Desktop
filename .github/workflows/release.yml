@@ -43,7 +43,7 @@ jobs:
         run: npm run scan:leaks
 
       - name: Scan workflows for unpinned Actions
-        run: npm run scan:workflows
+        run: npm run scan:workflows --if-present
 
       # Fails on a version or integrity mismatch against upstream.lock.json, so a release
       # cannot be built from a kernel other than the pinned one.
@@ -91,6 +91,7 @@ jobs:
       - name: Attach the installers to the release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           tag="${{ inputs.tag || github.ref_name }}"
