@@ -3,6 +3,17 @@
 An unofficial community desktop shell for the public
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) agent runtime.
 
+### [⬇ Download for Windows (x64)][latest-exe]
+
+[**Installer**][latest-exe] · [Portable zip][latest-zip] · [All releases][releases]
+
+Nothing else to install — the agent runtime and its Node are inside the download.
+Unsigned, so Windows SmartScreen will warn on first run.
+
+[latest-exe]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/latest/download/DeepSeek-Harness-Desktop-0.1.1-x64.exe
+[latest-zip]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/latest/download/DeepSeek-Harness-Desktop-0.1.1-x64.zip
+[releases]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases
+
 `dsh` is a command-line agent runtime that also serves a full web UI. This project wraps
 that runtime in a desktop application: it starts the kernel as a local child process,
 waits until it is genuinely serving, and shows its UI in a hardened window — so the
@@ -148,10 +159,12 @@ they can be tested directly:
 - [x] Bounded, redacted log capture
 - [x] Bundled, checksum-verified Node runtime
 - [x] Windows installer, verified by launching it and loading the UI
+- [x] Workspace picker verified working on the bundled runtime — the kernel's native
+      Windows picker has been reported to crash under other runtimes; on this build it
+      opens, cancels, and leaves the kernel serving. `buildShellPatch({
+      useBrowseDirectoryPicker: true })` selects the non-native implementation if a build
+      ever needs it, and is off by default
 - [ ] macOS and Linux builds
-- [ ] Workspace picker fix — the native picker crashes on Windows in the current kernel
-      preview; `buildShellPatch({ useBrowseDirectoryPicker: true })` selects the non-native
-      implementation, and it is not enabled by default yet
 
 ## Independence
 
