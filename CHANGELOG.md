@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] — 2026-08-14
+
+### Changed
+
+- The macOS Apple Silicon `.dmg` / `.zip` is a **new version**, not a replacement of the
+  `v0.1.2` filename. `v0.1.2` briefly had two different binaries under the same name
+  (first ad-hoc, then Developer ID). Use `v0.1.3` for the notarized build.
+- Packaging drops `node_modules/.bin` from the bundled kernel. Those npm shims are
+  absolute links to the build machine; leaving them in the `.app` makes
+  `codesign --verify --deep` fail.
+
+### Added
+
+- Developer ID signature and Apple notarization on the Apple Silicon package.
+  Gatekeeper reports `Notarized Developer ID`. The ticket is stapled to the `.app`.
+
 ## [0.1.2] — 2026-08-14
 
 ### Added
@@ -79,6 +95,7 @@ First preview. Windows is built and verified end to end; macOS and Linux are unt
 - Log redaction matches by shape and cannot be complete.
 - Installers are unsigned, so Windows SmartScreen will warn on first run.
 
+[0.1.3]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/tag/v0.1.3
 [0.1.2]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/tag/v0.1.2
 [0.1.1]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/tag/v0.1.1
 [0.1.0]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/tag/v0.1.0

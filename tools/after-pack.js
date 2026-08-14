@@ -48,6 +48,13 @@ export default async function afterPack(context) {
   console.log(`  • copying kernel  from=${source} to=${destination}`)
   await cp(source, destination, { recursive: true, force: true })
 
+  // npm writes .bin shims as absolute links into the *source* tree. Copied
+  // into the .app they still point at the build machine, and codesign
+  // --verify --deep fails with "invalid destination for symbolic link".
+  // The shell invokes lib/bin.js directly, so the shims are unused.
+  await rm(join(destination, 'node_modules', '.bin'), { recursive: true, force: true })
+  console.log('  • dropped kernel node_modules/.bin (absolute npm shims cannot be signed)')
+
   // Read back the one file the application actually spawns.
   const binPath = join(destination, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js')
   await assertPresent(binPath, `the kernel entry point is missing from the package at ${binPath}`)
