@@ -23,8 +23,6 @@ export function nodeRuntimeKey(platform, arch) {
     'win32-x64': 'win-x64',
     'darwin-arm64': 'darwin-arm64',
     'darwin-x64': 'darwin-x64',
-    'linux-x64': 'linux-x64',
-    'linux-arm64': 'linux-arm64',
   }
   return keys[`${platform}-${arch}`] ?? null
 }
