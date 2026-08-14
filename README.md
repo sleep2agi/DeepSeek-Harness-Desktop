@@ -3,15 +3,23 @@
 An unofficial community desktop shell for the public
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) agent runtime.
 
-### [⬇ Download for Windows (x64)][latest-exe]
+### Download
 
-[**Installer**][latest-exe] · [Portable zip][latest-zip] · [All releases][releases]
+**macOS (Apple Silicon)** — [Disk image][mac-dmg] · [Zip][mac-zip]
 
-Nothing else to install — the agent runtime and its Node are inside the download.
-Unsigned, so Windows SmartScreen will warn on first run.
+Developer ID signed and notarized. Nothing else to install — the agent runtime and its
+Node are inside the download.
 
-[latest-exe]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/latest/download/DeepSeek-Harness-Desktop-0.1.1-x64.exe
-[latest-zip]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/latest/download/DeepSeek-Harness-Desktop-0.1.1-x64.zip
+**Windows (x64)** — [Installer][win-exe] · [Portable zip][win-zip]
+
+Unsigned, so SmartScreen will warn on first run. The current Windows drop is still 0.1.1.
+
+[All releases][releases]
+
+[mac-dmg]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/download/v0.1.2/DeepSeek-Harness-Desktop-0.1.2-arm64.dmg
+[mac-zip]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/download/v0.1.2/DeepSeek-Harness-Desktop-0.1.2-arm64.zip
+[win-exe]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/download/v0.1.1/DeepSeek-Harness-Desktop-0.1.1-x64.exe
+[win-zip]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/download/v0.1.1/DeepSeek-Harness-Desktop-0.1.1-x64.zip
 [releases]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases
 
 `dsh` is a command-line agent runtime that also serves a full web UI. This project wraps
@@ -131,7 +139,7 @@ npm install          # shell dependencies (Electron, builder, types)
 npm test             # unit tests for every load-bearing decision — no network, no Electron
 npm run kernel:install   # fetch the pinned kernel into resources/kernel
 npm start            # launch the shell against it
-npm run dist:mac     # signed-ad-hoc .dmg and .zip for this Mac
+npm run dist:mac     # .dmg and .zip (Developer ID + notarize if Apple creds are set)
 npm run dist:win     # NSIS installer and .zip for Windows
 ```
 
@@ -162,7 +170,8 @@ they can be tested directly:
 - [x] Bounded, redacted log capture
 - [x] Bundled, checksum-verified Node runtime
 - [x] Windows installer, verified by launching it and loading the UI
-- [x] macOS build (Apple Silicon and Intel runtimes; `.dmg` + `.zip`)
+- [x] macOS build (Apple Silicon `.dmg` + `.zip`, Developer ID signed and notarized;
+      Intel runtime is pinned but not in the current drop)
 - [x] Workspace picker verified working on the bundled runtime — the kernel's native
       Windows picker has been reported to crash under other runtimes; on this build it
       opens, cancels, and leaves the kernel serving. `buildShellPatch({
@@ -172,12 +181,10 @@ they can be tested directly:
 
 ### macOS notes
 
-Packaged builds are ad-hoc signed, not notarized. A download from the internet will be
-quarantined by Gatekeeper. Right-click the app and choose Open, or:
-
-```sh
-xattr -dr com.apple.quarantine "/Applications/DeepSeek Harness Desktop.app"
-```
+The [v0.1.2](https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/tag/v0.1.2)
+Apple Silicon build is signed with Developer ID Application and notarized by Apple.
+Gatekeeper should accept it without a right-click override. The ticket is stapled to the
+`.app`; the `.dmg` itself is not separately stapled.
 
 A Mac launched from the Dock has a minimal `PATH`. The shell prepends Homebrew's usual
 locations (`/opt/homebrew/bin`, `/usr/local/bin`) so the kernel can still find `git` and
