@@ -53,7 +53,7 @@ export default async function afterPack(context) {
   // --verify --deep fails with "invalid destination for symbolic link".
   // The shell invokes lib/bin.js directly, so every .bin directory is unused.
   const dropped = await dropNpmBinDirs(join(destination, 'node_modules'))
-  console.log(`  • dropped ${dropped} kernel node_modules/**/.bin dir(s) (absolute npm shims cannot be signed)`)
+  console.log(`  • dropped ${dropped} kernel .bin dir(s) (absolute npm shims cannot be signed)`)
 
   // Read back the one file the application actually spawns.
   const binPath = join(destination, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js')
@@ -75,7 +75,7 @@ export default async function afterPack(context) {
 }
 
 /**
- * Removes every `node_modules/**/.bin` directory under `root`.
+ * Removes every `.bin` directory anywhere under a `node_modules` tree.
  *
  * @param {string} root
  * @returns {Promise<number>}
