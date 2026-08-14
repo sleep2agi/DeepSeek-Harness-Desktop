@@ -18,6 +18,39 @@
 export const MIN_NODE_VERSION = Object.freeze({ major: 22, minor: 15, patch: 0 })
 
 /**
+ * Directories a macOS GUI app does not inherit when launched from Finder or the
+ * Dock. Homebrew and `/usr/local` live here; without them the kernel cannot
+ * find `git` (and anything else the user installed the usual way) the moment
+ * the window is opened by double-clicking rather than from a terminal.
+ *
+ * Prepended even when the directory does not exist — a missing PATH entry is
+ * skipped by the loader, and checking the filesystem would make this decision
+ * untestable.
+ */
+export const MAC_GUI_PATH_PREFIXES = Object.freeze([
+  '/opt/homebrew/bin',
+  '/opt/homebrew/sbin',
+  '/usr/local/bin',
+])
+
+/**
+ * Returns a PATH value with the macOS GUI prefixes in front, unchanged on every
+ * other platform.
+ *
+ * @param {string | undefined} pathValue
+ * @param {string} platform
+ * @returns {string | undefined}
+ */
+export function withMacGuiPath(pathValue, platform) {
+  if (platform !== 'darwin') return pathValue
+  const current =
+    pathValue === undefined || pathValue === '' ? '/usr/bin:/bin:/usr/sbin:/sbin' : pathValue
+  const parts = current.split(':').filter((part) => part !== '')
+  const extra = MAC_GUI_PATH_PREFIXES.filter((prefix) => !parts.includes(prefix))
+  return extra.length === 0 ? current : [...extra, ...parts].join(':')
+}
+
+/**
  * Parses a `process.version` string into comparable numbers.
  *
  * @param {string} version - e.g. `v22.15.0`
@@ -101,9 +134,17 @@ export function buildKernelArgs({ binPath, port, patchFiles = [] }) {
  * @param {boolean} [options.runElectronAsNode] - true when the kernel is being launched
  *   with the Electron binary standing in for Node
  * @param {Record<string, string>} [options.extra] - additional variables to set
+ * @param {string} [options.platform] - `process.platform`; overridable so the
+ *   macOS PATH prefix can be asserted without running on a Mac
  * @returns {Record<string, string>}
  */
-export function buildKernelEnv({ parentEnv, dshHome, runElectronAsNode = false, extra = {} }) {
+export function buildKernelEnv({
+  parentEnv,
+  dshHome,
+  runElectronAsNode = false,
+  extra = {},
+  platform = process.platform,
+}) {
   /** @type {Record<string, string>} */
   const env = {}
 
@@ -130,6 +171,9 @@ export function buildKernelEnv({ parentEnv, dshHome, runElectronAsNode = false, 
   // The upstream telemetry plugin defaults to DISABLED; state it anyway, so the default
   // is a property of this app rather than of whichever kernel version got bundled.
   env.DSH_TELEMETRY_MODE = 'DISABLED'
+
+  const pathValue = withMacGuiPath(env.PATH, platform)
+  if (pathValue !== undefined) env.PATH = pathValue
 
   return { ...env, ...extra }
 }

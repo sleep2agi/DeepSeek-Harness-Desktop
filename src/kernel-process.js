@@ -9,6 +9,34 @@ import { createServer } from 'node:net'
 import { LogBuffer } from './log-redact.js'
 
 /**
+ * Options passed to `spawn` for a kernel launch.
+ *
+ * On Unix the child must lead its own process group: `stop()` then signals
+ * `-pid`, which reaches the kernel *and* the tools it spawned, without also
+ * signalling this Electron process. `spawn` does not do that by default — the
+ * child inherits the parent's group, `kill(-childPid)` fails with ESRCH, and
+ * only the kernel itself is torn down, leaving grandchildren orphaned.
+ *
+ * Windows walks the tree by PID with `taskkill /T` instead, so `detached`
+ * would only create a leftover console window.
+ *
+ * @param {object} options
+ * @param {string} options.cwd
+ * @param {Record<string, string>} options.env
+ * @param {string} [options.platform]
+ * @returns {import('node:child_process').SpawnOptions}
+ */
+export function buildSpawnOptions({ cwd, env, platform = process.platform }) {
+  return {
+    cwd,
+    env,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    windowsHide: true,
+    detached: platform !== 'win32',
+  }
+}
+
+/**
  * Asks the OS for a free TCP port.
  *
  * There is an unavoidable gap between releasing the port here and the kernel binding it,
@@ -81,12 +109,7 @@ export class KernelProcess {
   start({ nodePath, args, env, cwd }) {
     if (this.#child !== null) throw new Error('this kernel process was already started')
 
-    const child = spawn(nodePath, args, {
-      cwd,
-      env,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      windowsHide: true,
-    })
+    const child = spawn(nodePath, args, buildSpawnOptions({ cwd, env }))
     this.#child = child
 
     // A spawn failure surfaces here and nowhere else. It is not thrown by `spawn`, and it
@@ -158,7 +181,9 @@ export class KernelProcess {
    * The kernel spawns children of its own — tool subprocesses, workers — and killing only
    * the parent leaves those orphaned. On Windows the whole tree is taken down by PID with
    * `taskkill /T`; addressing processes by image name instead would also kill any other
-   * Node process the user happens to be running.
+   * Node process the user happens to be running. On Unix the child was spawned as its
+   * own process-group leader (see {@link buildSpawnOptions}), so a negative pid reaches
+   * the group.
    *
    * @param {object} [options]
    * @param {number} [options.timeoutMs] - how long to wait for a graceful exit

@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url'
 import { app, BrowserWindow, dialog, shell } from 'electron'
 import { KernelProcess, findFreePort } from './kernel-process.js'
 import { buildKernelArgs, buildKernelEnv, isSupportedNodeVersion } from './kernel-runtime.js'
+import { nodeBinaryName } from './node-runtime.js'
 import { httpProbe, waitForReady } from './readiness.js'
 import { buildShellPatch, serialisePatch } from './shell-patch.js'
 import { writeFile } from 'node:fs/promises'
@@ -49,7 +50,7 @@ function resolveKernelPaths() {
   // tested against Node releases, and Electron's bundled Node is a different runtime that
   // merely resembles one. Falling back to Electron is supported, but it has to be told to
   // behave as Node — see buildKernelEnv.
-  const bundled = join(root, process.platform === 'win32' ? 'node.exe' : 'node')
+  const bundled = join(root, nodeBinaryName(process.platform))
   const hasBundledNode = existsSync(bundled)
 
   return {
@@ -244,9 +245,18 @@ if (!app.requestSingleInstanceLock()) {
     }
   })
 
+  // The kernel is a child of this process. macOS would normally keep the app
+  // alive with no windows; that would leave the kernel running invisibly in
+  // the Dock. Quit on last close on every platform.
   app.on('window-all-closed', async () => {
     await shutdown()
     app.quit()
+  })
+
+  app.on('activate', () => {
+    if (mainWindow === null || mainWindow.isDestroyed()) return
+    mainWindow.show()
+    mainWindow.focus()
   })
 
   // `before-quit` is the last point at which the kernel can still be stopped; without it a

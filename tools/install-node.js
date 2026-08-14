@@ -22,29 +22,41 @@
 
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {
+  nodeArchiveBinaryPath,
+  nodeArchiveFolder,
+  nodeBinaryName,
+  nodeRuntimeKey,
+} from '../src/node-runtime.js'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const kernelDir = join(repoRoot, 'resources', 'kernel')
 
 async function main() {
-  if (process.platform !== 'win32') {
-    console.log(`install-node: no bundled runtime defined for ${process.platform}; skipping`)
+  const platform = process.env.DSH_TARGET_PLATFORM ?? process.platform
+  const arch = process.env.DSH_TARGET_ARCH ?? process.arch
+  const key = nodeRuntimeKey(platform, arch)
+
+  if (key === null) {
+    console.log(`install-node: no bundled runtime defined for ${platform}-${arch}; skipping`)
     return
   }
 
   const lock = JSON.parse(await readFile(join(repoRoot, 'upstream.lock.json'), 'utf8'))
   const runtime = lock.nodeRuntime
-  const target = runtime?.['win-x64']
-  if (target === undefined) throw new Error('upstream.lock.json has no nodeRuntime.win-x64 entry')
+  const target = runtime?.[key]
+  if (target === undefined || typeof target !== 'object') {
+    throw new Error(`upstream.lock.json has no nodeRuntime.${key} entry`)
+  }
 
-  const destination = join(kernelDir, 'node.exe')
+  const destination = join(kernelDir, nodeBinaryName(platform))
   if (existsSync(destination) && (await reports(destination)) === runtime.version) {
-    console.log(`node ${runtime.version} already present`)
+    console.log(`node ${runtime.version} (${key}) already present`)
     return
   }
 
@@ -72,37 +84,66 @@ async function main() {
   try {
     const archivePath = join(staging, target.archive)
     await writeFile(archivePath, archive)
+    extractArchive(archivePath, staging, target.archive)
 
-    // Expand-Archive is present on every supported Windows version, which avoids adding a
-    // dependency for a step that runs once per build.
-    execFileSync(
-      'powershell.exe',
-      [
-        '-NoProfile',
-        '-NonInteractive',
-        '-Command',
-        `Expand-Archive -Path '${archivePath}' -DestinationPath '${staging}' -Force`,
-      ],
-      { stdio: 'inherit' },
+    const extracted = join(
+      staging,
+      nodeArchiveFolder(target.archive),
+      typeof target.binary === 'string' ? target.binary : nodeArchiveBinaryPath(target.archive),
     )
-
-    const extracted = join(staging, target.archive.replace(/\.zip$/, ''), 'node.exe')
-    if (!existsSync(extracted)) throw new Error(`the archive did not contain node.exe at ${extracted}`)
+    if (!existsSync(extracted)) throw new Error(`the archive did not contain the Node binary at ${extracted}`)
 
     await mkdir(kernelDir, { recursive: true })
     await cp(extracted, destination, { force: true })
+    if (platform !== 'win32') await chmod(destination, 0o755)
   } finally {
     await rm(staging, { recursive: true, force: true })
   }
 
-  // Only node.exe is kept. npm and npx are not needed to run the kernel, and every file
-  // shipped is a file that has to be accounted for.
+  // Only the Node binary is kept. npm and npx are not needed to run the kernel, and every
+  // file shipped is a file that has to be accounted for.
   const reported = await reports(destination)
   if (reported !== runtime.version) {
     throw new Error(`the extracted binary reports ${reported}, but ${runtime.version} was pinned`)
   }
 
-  console.log(`node ${runtime.version} installed and verified at resources/kernel/node.exe`)
+  console.log(`node ${runtime.version} (${key}) installed and verified at ${destination}`)
+}
+
+/**
+ * @param {string} archivePath
+ * @param {string} staging
+ * @param {string} archiveName
+ * @returns {void}
+ */
+function extractArchive(archivePath, staging, archiveName) {
+  if (archiveName.endsWith('.zip')) {
+    // Expand-Archive is present on every supported Windows version, which avoids adding a
+    // dependency for a step that runs once per build. On unix, bsdtar reads zip files
+    // without the gzip flag — `-z` would look for a gzip member and fail.
+    if (process.platform === 'win32') {
+      execFileSync(
+        'powershell.exe',
+        [
+          '-NoProfile',
+          '-NonInteractive',
+          '-Command',
+          `Expand-Archive -Path '${archivePath}' -DestinationPath '${staging}' -Force`,
+        ],
+        { stdio: 'inherit' },
+      )
+      return
+    }
+    execFileSync('tar', ['-xf', archivePath, '-C', staging], { stdio: 'inherit' })
+    return
+  }
+
+  if (archiveName.endsWith('.tar.gz') || archiveName.endsWith('.tgz')) {
+    execFileSync('tar', ['-xzf', archivePath, '-C', staging], { stdio: 'inherit' })
+    return
+  }
+
+  throw new Error(`do not know how to extract ${archiveName}`)
 }
 
 /**

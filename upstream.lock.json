@@ -12,6 +12,14 @@
     "win-x64": {
       "archive": "node-v22.22.0-win-x64.zip",
       "sha256": "c97fa376d2becdc8863fcd3ca2dd9a83a9f3468ee7ccf7a6d076ec66a645c77a"
+    },
+    "darwin-arm64": {
+      "archive": "node-v22.22.0-darwin-arm64.tar.gz",
+      "sha256": "5ed4db0fcf1eaf84d91ad12462631d73bf4576c1377e192d222e48026a902640"
+    },
+    "darwin-x64": {
+      "archive": "node-v22.22.0-darwin-x64.tar.gz",
+      "sha256": "5ea50c9d6dea3dfa3abb66b2656f7a4e1c8cef23432b558d45fb538c7b5dedce"
     }
   }
 }

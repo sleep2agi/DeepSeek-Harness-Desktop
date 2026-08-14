@@ -1,7 +1,7 @@
 {
   "name": "deepseek-harness-desktop",
   "productName": "DeepSeek Harness Desktop",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Desktop shell for the DeepSeek Harness (dsh) agent runtime.",
   "license": "MIT",
   "type": "module",
@@ -27,7 +27,9 @@
     "scan:leaks": "node tools/scan-leaks.js",
     "prepack:app": "npm run test && npm run scan:leaks && npm run kernel:install",
     "pack": "npm run prepack:app && electron-builder --dir",
-    "dist": "npm run prepack:app && electron-builder --win --publish never"
+    "dist": "npm run prepack:app && electron-builder --publish never",
+    "dist:win": "npm run prepack:app && electron-builder --win --publish never",
+    "dist:mac": "npm run prepack:app && electron-builder --mac --publish never"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
@@ -69,8 +71,16 @@
       "category": "Development"
     },
     "mac": {
-      "target": ["dmg"],
-      "category": "public.app-category.developer-tools"
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.developer-tools",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist",
+      "target": ["dmg", "zip"]
+    },
+    "dmg": {
+      "title": "${productName} ${version}"
     }
   }
 }

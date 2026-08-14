@@ -1,10 +1,12 @@
 import { strict as assert } from 'node:assert'
 import { describe, it } from 'node:test'
 import {
+  MAC_GUI_PATH_PREFIXES,
   buildKernelArgs,
   buildKernelEnv,
   isSupportedNodeVersion,
   parseNodeVersion,
+  withMacGuiPath,
 } from './kernel-runtime.js'
 
 describe('parseNodeVersion', () => {
@@ -109,6 +111,9 @@ describe('buildKernelEnv', () => {
         PATH: '/usr/bin',
       },
       dshHome: '/app/home',
+      // Pin the platform so this assertion is about the DSH_* filter, not the
+      // macOS PATH prefix (which has its own test).
+      platform: 'linux',
     })
 
     assert.equal(env.DSH_HOME, '/app/home')
@@ -148,5 +153,60 @@ describe('buildKernelEnv', () => {
       extra: { DEEPSEEK_API_KEY: 'supplied-at-launch' },
     })
     assert.equal(env.DEEPSEEK_API_KEY, 'supplied-at-launch')
+  })
+
+  it('prepends Homebrew paths on macOS so a Dock-launched app can still find git', () => {
+    // Finder/Dock give GUI apps `/usr/bin:/bin:/usr/sbin:/sbin`. Leaving that
+    // alone is why `git: command not found` only happens when the window is
+    // opened by double-clicking.
+    const env = buildKernelEnv({
+      parentEnv: { PATH: '/usr/bin:/bin:/usr/sbin:/sbin' },
+      dshHome: '/app/home',
+      platform: 'darwin',
+    })
+    assert.ok(env.PATH?.startsWith('/opt/homebrew/bin:'))
+    assert.ok(env.PATH?.includes('/usr/local/bin'))
+    assert.ok(env.PATH?.endsWith('/usr/bin:/bin:/usr/sbin:/sbin'))
+  })
+
+  it('does not rewrite PATH on Windows or Linux', () => {
+    const win = buildKernelEnv({
+      parentEnv: { PATH: 'C:\\Windows\\system32' },
+      dshHome: 'C:\\app\\home',
+      platform: 'win32',
+    })
+    assert.equal(win.PATH, 'C:\\Windows\\system32')
+
+    const linux = buildKernelEnv({
+      parentEnv: { PATH: '/usr/bin' },
+      dshHome: '/app/home',
+      platform: 'linux',
+    })
+    assert.equal(linux.PATH, '/usr/bin')
+  })
+
+  it('does not duplicate a prefix the user already has', () => {
+    const already = '/opt/homebrew/bin:/usr/bin'
+    const env = buildKernelEnv({
+      parentEnv: { PATH: already },
+      dshHome: '/app/home',
+      platform: 'darwin',
+    })
+    const matches = env.PATH?.split(':').filter((part) => part === '/opt/homebrew/bin')
+    assert.equal(matches?.length, 1)
+  })
+})
+
+describe('withMacGuiPath', () => {
+  it('leaves a non-darwin PATH untouched', () => {
+    assert.equal(withMacGuiPath('/usr/bin', 'linux'), '/usr/bin')
+    assert.equal(withMacGuiPath(undefined, 'win32'), undefined)
+  })
+
+  it('supplies the GUI default when launched with an empty PATH', () => {
+    const result = withMacGuiPath('', 'darwin')
+    for (const prefix of MAC_GUI_PATH_PREFIXES) {
+      assert.ok(result?.includes(prefix), `missing ${prefix}`)
+    }
   })
 })
