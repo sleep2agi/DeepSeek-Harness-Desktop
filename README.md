@@ -16,8 +16,8 @@ Unsigned, so SmartScreen will warn on first run. The current Windows drop is sti
 
 [All releases][releases]
 
-[mac-dmg]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/download/v0.1.2/DeepSeek-Harness-Desktop-0.1.2-arm64.dmg
-[mac-zip]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/download/v0.1.2/DeepSeek-Harness-Desktop-0.1.2-arm64.zip
+[mac-dmg]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/download/v0.1.3/DeepSeek-Harness-Desktop-0.1.3-arm64.dmg
+[mac-zip]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/download/v0.1.3/DeepSeek-Harness-Desktop-0.1.3-arm64.zip
 [win-exe]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/download/v0.1.1/DeepSeek-Harness-Desktop-0.1.1-x64.exe
 [win-zip]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/download/v0.1.1/DeepSeek-Harness-Desktop-0.1.1-x64.zip
 [releases]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases
@@ -181,7 +181,7 @@ they can be tested directly:
 
 ### macOS notes
 
-The [v0.1.2](https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/tag/v0.1.2)
+The [v0.1.3](https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/tag/v0.1.3)
 Apple Silicon build is signed with Developer ID Application and notarized by Apple.
 Gatekeeper should accept it without a right-click override. The ticket is stapled to the
 `.app`; the `.dmg` itself is not separately stapled.

@@ -48,6 +48,13 @@ export default async function afterPack(context) {
   console.log(`  • copying kernel  from=${source} to=${destination}`)
   await cp(source, destination, { recursive: true, force: true })
 
+  // npm writes .bin shims as absolute links into the *source* tree. Copied
+  // into the .app they still point at the build machine, and codesign
+  // --verify --deep fails with "invalid destination for symbolic link".
+  // The shell invokes lib/bin.js directly, so every .bin directory is unused.
+  const dropped = await dropNpmBinDirs(join(destination, 'node_modules'))
+  console.log(`  • dropped ${dropped} kernel .bin dir(s) (absolute npm shims cannot be signed)`)
+
   // Read back the one file the application actually spawns.
   const binPath = join(destination, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js')
   await assertPresent(binPath, `the kernel entry point is missing from the package at ${binPath}`)
@@ -65,6 +72,35 @@ export default async function afterPack(context) {
   console.log('  • kernel copied and verified')
 
   await pruneLocales(isMac ? join(resourcesDir, '..', 'Resources') : context.appOutDir)
+}
+
+/**
+ * Removes every `.bin` directory anywhere under a `node_modules` tree.
+ *
+ * @param {string} root
+ * @returns {Promise<number>}
+ */
+async function dropNpmBinDirs(root) {
+  let dropped = 0
+  /** @type {import('node:fs').Dirent[]} */
+  let entries
+  try {
+    entries = await readdir(root, { withFileTypes: true })
+  } catch {
+    return 0
+  }
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue
+    const path = join(root, entry.name)
+    if (entry.name === '.bin') {
+      await rm(path, { recursive: true, force: true })
+      dropped += 1
+      continue
+    }
+    dropped += await dropNpmBinDirs(path)
+  }
+  return dropped
 }
 
 /**
