@@ -77,6 +77,9 @@
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "assets/entitlements.mac.plist",
+      "extraResources": [
+        "assets/icon.png"
+      ],
       "entitlementsInherit": "assets/entitlements.mac.plist",
       "notarize": true,
       "target": ["dmg", "zip"]
