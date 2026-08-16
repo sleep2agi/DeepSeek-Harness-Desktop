@@ -12,7 +12,7 @@ import { existsSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { app, BrowserWindow, dialog, shell } from 'electron'
+import { app, BrowserWindow, dialog, shell, ipcMain } from 'electron'
 import { KernelProcess, findFreePort } from './kernel-process.js'
 import { buildKernelArgs, buildKernelEnv, isSupportedNodeVersion } from './kernel-runtime.js'
 import { nodeBinaryName } from './node-runtime.js'
@@ -25,6 +25,7 @@ import {
   isAllowedNavigation,
   kernelOrigin,
 } from './window-policy.js'
+import { createTray, showTaskNotification, destroyTray } from './tray.js'
 
 const HOST = '127.0.0.1'
 const here = dirname(fileURLToPath(import.meta.url))
@@ -33,6 +34,8 @@ const here = dirname(fileURLToPath(import.meta.url))
 let kernel = null
 /** @type {BrowserWindow | null} */
 let mainWindow = null
+/** @type {boolean} */
+let isQuitting = false
 
 /**
  * Where the bundled kernel lives, packaged or not.
@@ -185,6 +188,13 @@ function createWindow(origin) {
   })
 
   window.once('ready-to-show', () => window.show())
+  window.on('close', (event) => {
+    // Only hide if not quitting (not dock quit)
+    if (!isQuitting && process.platform === 'darwin') {
+      event.preventDefault()
+      window.hide()
+    }
+  })
   window.on('closed', () => {
     mainWindow = null
   })
@@ -224,6 +234,12 @@ if (!app.requestSingleInstanceLock()) {
     try {
       const { origin } = await startKernel()
       mainWindow = createWindow(origin)
+      createTray(mainWindow)
+
+      // IPC handler for renderer to notify task completion
+      ipcMain.on('task-complete', (_event, { title, body }) => {
+        showTaskNotification(title || 'Task Complete', body || 'DeepSeek task has finished.')
+      })
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
 
@@ -245,10 +261,9 @@ if (!app.requestSingleInstanceLock()) {
     }
   })
 
-  // The kernel is a child of this process. macOS would normally keep the app
-  // alive with no windows; that would leave the kernel running invisibly in
-  // the Dock. Quit on last close on every platform.
+  // The kernel is a child of this process. Quit on last close on all platforms.
   app.on('window-all-closed', async () => {
+    isQuitting = true
     await shutdown()
     app.quit()
   })
@@ -262,6 +277,8 @@ if (!app.requestSingleInstanceLock()) {
   // `before-quit` is the last point at which the kernel can still be stopped; without it a
   // quit triggered from the menu or the OS would leave the process tree running.
   app.on('before-quit', () => {
+    isQuitting = true
+    destroyTray()
     void shutdown()
   })
 }
