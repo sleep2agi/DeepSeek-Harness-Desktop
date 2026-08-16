@@ -15,9 +15,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
-- This is a new tag, not a replacement of `v0.1.2`. Keep using `v0.1.2` for the
-  known-good notarized Mac download if this drop is unsigned or a `.dmg` is
-  reported damaged.
+- This is a new tag, not a replacement of `v0.1.2`. The 0.1.4 `.app` and `.dmg`
+  are Developer ID signed, notarized, and stapled.
 
 ## [0.1.3] — 2026-08-14
 
