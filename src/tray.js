@@ -1,37 +1,77 @@
 /**
  * System tray management for macOS.
  *
+ * Icon path and hide-vs-quit are decided here so they can be tested without a
+ * real Tray. Electron APIs are loaded only when creating the tray, because this
+ * module is also imported by `node --test`.
+ *
  * @module tray
  */
 
-import { Tray, Menu, nativeImage, Notification, app } from 'electron'
-import { join, dirname } from 'node:path'
+import { createRequire } from 'node:module'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
+const requireFromHere = createRequire(import.meta.url)
 
-/** @type {Tray | null} */
+/** @type {import('electron').Tray | null} */
 let tray = null
 
 /** @type {import('electron').BrowserWindow | null} */
 let mainWindowRef = null
 
 /**
- * Get the correct path to the icon, handling both dev and packaged scenarios.
+ * Packaged `extraResources` copies `assets/icon.png` under `Contents/Resources/assets/`.
+ *
+ * @param {object} options
+ * @param {boolean} options.isPackaged
+ * @param {string} options.resourcesPath
+ * @param {string} options.projectRoot
+ * @returns {string}
+ */
+export function resolveTrayIconPath({ isPackaged, resourcesPath, projectRoot }) {
+  if (isPackaged) {
+    return join(resourcesPath, 'assets', 'icon.png')
+  }
+  return join(projectRoot, 'assets', 'icon.png')
+}
+
+/**
+ * Closing the last window on macOS hides to the tray unless we are already quitting.
+ * Quit still goes through `before-quit` / `window-all-closed` and stops the kernel.
+ *
+ * @param {object} options
+ * @param {boolean} options.isQuitting
+ * @param {string} options.platform
+ * @returns {boolean}
+ */
+export function shouldHideOnClose({ isQuitting, platform }) {
+  return !isQuitting && platform === 'darwin'
+}
+
+/**
  * @returns {string}
  */
 function getIconPath() {
-  if (app.isPackaged) {
-    // In packaged app, extraResources puts files in Contents/Resources/
-    return join(process.resourcesPath, 'assets', 'icon.png')
-  }
-  return join(here, '..', 'assets', 'icon.png')
+  const { app } = electronApi()
+  return resolveTrayIconPath({
+    isPackaged: app.isPackaged,
+    resourcesPath: process.resourcesPath,
+    projectRoot: join(here, '..'),
+  })
+}
+
+/** @returns {typeof import('electron')} */
+function electronApi() {
+  return requireFromHere('electron')
 }
 
 /**
  * @param {import('electron').BrowserWindow} window
  */
 export function createTray(window) {
+  const { Tray, Menu, nativeImage, app } = electronApi()
   mainWindowRef = window
 
   // Use the app icon as tray icon
@@ -87,6 +127,7 @@ export function createTray(window) {
  * @param {string} body
  */
 export function showTaskNotification(title, body) {
+  const { Notification } = electronApi()
   if (!Notification.isSupported()) return
 
   const notification = new Notification({

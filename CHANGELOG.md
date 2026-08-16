@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] — 2026-08-16
+
+### Added
+
+- macOS tray: closing the window hides the app instead of quitting, so the kernel
+  keeps running. Quit from the tray menu, Dock, or Cmd+Q still stops the kernel
+  process tree. Tray icon path and hide-vs-quit are decided by testable helpers
+  (`resolveTrayIconPath`, `shouldHideOnClose`).
+
+### Changed
+
+- This is a new tag, not a replacement of `v0.1.2`. Keep using `v0.1.2` for the
+  known-good notarized Mac download if this drop is unsigned or a `.dmg` is
+  reported damaged.
+
 ## [0.1.3] — 2026-08-14
 
 ### Changed
@@ -95,6 +110,7 @@ First preview. Windows is built and verified end to end; macOS and Linux are unt
 - Log redaction matches by shape and cannot be complete.
 - Installers are unsigned, so Windows SmartScreen will warn on first run.
 
+[0.1.4]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/tag/v0.1.4
 [0.1.3]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/tag/v0.1.3
 [0.1.2]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/tag/v0.1.2
 [0.1.1]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/tag/v0.1.1
