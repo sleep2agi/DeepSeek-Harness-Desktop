@@ -7,9 +7,10 @@ An unofficial community desktop shell for the public
 
 **macOS (Apple Silicon)** — [Disk image][mac-dmg] · [Zip][mac-zip]
 
-Use **v0.1.2**. That drop is Developer ID signed and notarized and is the one that
-opens. The v0.1.3 `.dmg` was reported damaged (unsigned disk-image wrapper). Nothing
-else to install — the agent runtime and its Node are inside the download.
+Use **v0.1.4**. Developer ID signed and notarized (the `.app` and the `.dmg` wrapper
+are both stapled). Closing the window hides to the menu bar; quit from the tray,
+Dock, or Cmd+Q. Nothing else to install — the agent runtime and its Node are inside
+the download.
 
 **Windows (x64)** — [Installer][win-exe] · [Portable zip][win-zip]
 
@@ -17,8 +18,8 @@ Unsigned, so SmartScreen will warn on first run. The current Windows drop is sti
 
 [All releases][releases]
 
-[mac-dmg]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/download/v0.1.2/DeepSeek-Harness-Desktop-0.1.2-arm64.dmg
-[mac-zip]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/download/v0.1.2/DeepSeek-Harness-Desktop-0.1.2-arm64.zip
+[mac-dmg]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/download/v0.1.4/DeepSeek-Harness-Desktop-0.1.4-arm64.dmg
+[mac-zip]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/download/v0.1.4/DeepSeek-Harness-Desktop-0.1.4-arm64.zip
 [win-exe]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/download/v0.1.1/DeepSeek-Harness-Desktop-0.1.1-x64.exe
 [win-zip]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/download/v0.1.1/DeepSeek-Harness-Desktop-0.1.1-x64.zip
 [releases]: https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases
@@ -182,9 +183,9 @@ they can be tested directly:
 
 ### macOS notes
 
-The [v0.1.2](https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/tag/v0.1.2)
-Apple Silicon build (the second upload on that tag — Developer ID, notarized `.app`) is
-the one that opens. Prefer that over v0.1.3 if a downloaded `.dmg` says it is damaged.
+The [v0.1.4](https://github.com/sleep2agi/DeepSeek-Harness-Desktop/releases/tag/v0.1.4)
+Apple Silicon build is Developer ID signed; the `.app` and the `.dmg` are notarized and
+stapled. Prefer that over v0.1.3 if a downloaded `.dmg` says it is damaged.
 
 A Mac launched from the Dock has a minimal `PATH`. The shell prepends Homebrew's usual
 locations (`/opt/homebrew/bin`, `/usr/local/bin`) so the kernel can still find `git` and
