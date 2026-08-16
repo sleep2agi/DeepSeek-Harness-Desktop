@@ -25,7 +25,7 @@ import {
   isAllowedNavigation,
   kernelOrigin,
 } from './window-policy.js'
-import { createTray, showTaskNotification, destroyTray } from './tray.js'
+import { createTray, destroyTray, shouldHideOnClose, showTaskNotification } from './tray.js'
 
 const HOST = '127.0.0.1'
 const here = dirname(fileURLToPath(import.meta.url))
@@ -189,8 +189,7 @@ function createWindow(origin) {
 
   window.once('ready-to-show', () => window.show())
   window.on('close', (event) => {
-    // Only hide if not quitting (not dock quit)
-    if (!isQuitting && process.platform === 'darwin') {
+    if (shouldHideOnClose({ isQuitting, platform: process.platform })) {
       event.preventDefault()
       window.hide()
     }
